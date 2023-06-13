@@ -1,6 +1,10 @@
-from plotly import graph_objects as go
 import numpy as np
 from random import random
+from plotly_plotting import plot_ifs_2d, plot_ifs_3d
+from iter_funcs import barnsley_fern, barnsley_fern_3d, rand_func, serpinski_carpet, nn_to_iter_func
+from plt_plotting import graph_2d, graph_2d_iter
+from model import IterNet2D
+import torch
 
 """
 Ideas:
@@ -18,101 +22,18 @@ def generate(f, max_iter=10000, x0=np.array([0, 0])):
         yield x
         #random num 0-1
         # apply output
-        x = f(x, random())
+        x = f(x)
         
 
-def barnsley_fern(x, r):
-    A = np.array([[1, 0],
-                  [0, 1]])
-    b = np.array([0, 0])
-    
-    if r < 0.01:
-        A = np.array([[0, 0],
-                      [0, 0.16]])
-    elif r < 0.86:
-        A = np.array([[0.85, 0.04],
-                      [-0.04, 0.85]])
-        b = np.array([0, 1.60])
-    elif r < 0.93:
-        A = np.array([[0.20, -0.26],
-                      [0.23, 0.22]])
-        b = np.array([0, 1.60])
-    else:
-        A = np.array([[-0.15, 0.28],
-                      [0.26, 0.24]])
-        b = np.array([0, 0.44])
-
-    y = A@x + b
-    return y
-
-def rand_func(x, r):
-    A = np.array([[random(), random()],
-                  [random(), random()]])
-    b = np.array([random(), random()]) 
-    y = A@x + b
-    return y
 
 
-def barnsley_fern_3d(x, r):
-    A = np.array([[1, 0, 0],
-                  [0, 1, 0],
-                  [0, 0, 1]])
-    b = np.array([0, 0, 0])
-    
-    if r < 0.01:
-        A = np.array([[0, 0, 0],
-                      [0, 0.16, 0],
-                      [0, 0, 0.16]])
-    elif r < 0.86:
-        A = np.array([[0.85, 0.04, 0.04],
-                      [-0.04, 0.85, 0.04],
-                      [-0.04, -0.04, 0.85]])
-        
-        b = np.array([0, 1.60, 0])
-    elif r < 0.93:
-        A = np.array([[0.20, -0.26, -0.26],
-                      [0.23, 0.22, -0.26],
-                      [0.23, 0.23, 0.24]])
-        b = np.array([0, 1.60, 0])
-    else:
-        A = np.array([[-0.15, 0.28, 0.28],
-                      [0.26, 0.24, 0.28],
-                      [0.26, 0.26, 0.39]])
-        b = np.array([0, 0.44, 0])
+n = 100000
+#generator_2d = generate(serpinski_carpet, max_iter=n)
+#plot_ifs_2d(generator_2d)
+#generator_3d = generate(barnsley_fern_3d, max_iter=1000, x0=np.array([0, 0, 0]))
+#plot_ifs_3d(generator_3d)
 
-    y = A@x + b
-    return y
-
-#generator_2d = generate(barnsley_fern, max_iter=10000)
-
-def plot_ifs_2d(generator):
-    points = [x for x in generator]
-    #points = np.fromiter(generator, np.dtype((float, 2)))
-    points = np.transpose(points)
-    fig = go.Figure(data=go.Scatter(
-        x=points[0],
-        y=points[1],
-        mode="markers",
-        marker_color = "black",
-        marker_size = 2,
-    ))
-
-    fig.show()
-
-def plot_ifs_3d(generator):
-    points = [x for x in generator]
-    #points = np.fromiter(generator, np.dtype((float, 2)))
-    points = np.transpose(points)
-    fig = go.Figure(data=go.Scatter3d(
-        x=points[0],
-        y=points[1],
-        z=points[2],
-        mode="markers",
-        marker_color = "black",
-        marker_size = 2,
-    ))
-
-    fig.show()
-
-generator_3d = generate(barnsley_fern_3d, max_iter=10000, x0=np.array([0, 0, 0]))
-plot_ifs_3d(generator_3d)
+model = IterNet2D()
+model.load_state_dict(torch.load("weights"))
+generator_2d = generate(nn_to_iter_func(model), max_iter=n)
+plot_ifs_2d(generator_2d)
