@@ -30,13 +30,14 @@ fern_ifs = np.array([
 
 # test generation of fern via IFS
 attractor = rand_generate(fern_ifs, fern_probs)
-attractor2 = rand_generate(fern_ifs, fern_probs)
 #plot_3d(attractor)
 
 #test generaation of fern via collage
+fern_ifs = np.random.rand(4,12)/2
 collage = hutchinson_operator(torch.Tensor(attractor), torch.Tensor(fern_ifs))
 print(collage.size())
 print(attractor.shape)
+
 fig = plot_3d(collage)
 attractor_t = np.transpose(attractor)
 fig.add_trace(
