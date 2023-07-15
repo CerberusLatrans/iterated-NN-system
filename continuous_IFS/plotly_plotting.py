@@ -1,9 +1,7 @@
 from plotly import graph_objects as go
 import numpy as np
 
-def plot_ifs_2d(generator):
-    points = [x for x in generator]
-    #points = np.fromiter(generator, np.dtype((float, 2)))
+def plot_ifs_2d(points):
     points = np.transpose(points)
     fig = go.Figure(data=go.Scatter(
         x=points[0],

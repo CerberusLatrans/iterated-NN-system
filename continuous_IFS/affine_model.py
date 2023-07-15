@@ -1,29 +1,13 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from random import random
+from scipy.spatial.distance import directed_hausdorff
 
 class IterNet2D(torch.nn.Module):
     def __init__(self):
         super().__init__()
 
         self.layers = torch.nn.Sequential(
-            torch.nn.Linear(1, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 32),
-            torch.nn.ReLU(),
-            torch.nn.Linear(32, 6)
-        )
-        self.wide = torch.nn.Sequential(
-            torch.nn.Linear(1, 128),
-            torch.nn.ReLU(),
-            torch.nn.Linear(128, 6)
-        )
-        self.long = torch.nn.Sequential(
             torch.nn.Linear(1, 8),
             torch.nn.ReLU(),
             torch.nn.Linear(8, 16),
@@ -37,6 +21,17 @@ class IterNet2D(torch.nn.Module):
             torch.nn.Linear(32, 16),
             torch.nn.ReLU(),
             torch.nn.Linear(16, 6)
+        )
+        self.short = torch.nn.Sequential(
+            torch.nn.Linear(1, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 6)
         ) 
     
     # (random) number (seed) input
@@ -46,18 +41,18 @@ class IterNet2D(torch.nn.Module):
         [[a, b]     [[e],
          [c, d]] +   [f]]
         """
-        out = self.long(x)
+        out = self.short(x)
         return out
 
 def fern(r):
     if r < 0.01:
-        return torch.tensor([0, 0, 0, 0.16, 0, 0])
+        return [0, 0, 0, 0.16, 0, 0]
     elif r < 0.86:
-        return torch.tensor([0.85, 0.04, -0.04, 0.85, 0, 1.60])
+        return [0.85, 0.04, -0.04, 0.85, 0, 1.60]
     elif r < 0.93:
-        return torch.tensor([0.20, -0.26, 0.23, 0.22, 0, 1.60])
+        return [0.20, -0.26, 0.23, 0.22, 0, 1.60]
     else:
-        return torch.tensor([-0.15, 0.28, 0.26, 0.24, 0, 0.44])
+        return [-0.15, 0.28, 0.26, 0.24, 0, 0.44]
 
 if __name__ == "__main__":
     """
@@ -66,13 +61,13 @@ if __name__ == "__main__":
     """
     model = IterNet2D()
     loss_function = torch.nn.MSELoss()
-    LR = 1e-5
+    LR = 3e-4
     weight_decay = 1e-8
-    EPOCHS = 10
     SAMPLES = 10000
+    N_POINTS = 100
 
-    SAVE = False
-    PATH = "weights"
+    SAVE = True
+    PATH = "weights/batch100"
     """
     =================
     """
@@ -81,20 +76,20 @@ if __name__ == "__main__":
 
     outputs = []
     losses = []
-    for epoch in range(EPOCHS):
-        for i in range(SAMPLES):
-            r = torch.tensor([random()])
-            pred = model(r)
-            ground = fern(r)
-            loss = loss_function(pred, ground)
-            
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
-            if i%10==0:
-                losses.append(loss.item())
-        print(losses[-1])
+    for sample in range(SAMPLES):
+        r = torch.tensor(np.random.rand(N_POINTS, 1).astype(np.float32))
+        pred = model(r)
+        ground = torch.tensor([fern(x.item()) for x in r])
+
+        loss = loss_function(pred, ground)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        losses.append(loss.item())
+        if sample%100==0:
+            print(losses[-1])
 
     if SAVE:
         torch.save(model.state_dict(), PATH)
@@ -105,7 +100,7 @@ if __name__ == "__main__":
     xs = np.linspace(0,1,100).astype(np.float32)
     xs_tensor = torch.unsqueeze(torch.from_numpy(xs),1)
     model_out = np.transpose(model(xs_tensor).detach().numpy())
-    fern_out = np.transpose(np.array([fern(x).detach().numpy() for x in xs]))
+    fern_out = np.transpose(np.array([fern(x) for x in xs]))
     for i,ax in enumerate(axs.ravel()):
         ax.plot(xs, model_out[i])
         ax.plot(xs, fern_out[i])

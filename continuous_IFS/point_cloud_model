@@ -1,0 +1,134 @@
+import torch
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.distance import directed_hausdorff
+from iter_funcs import transform_to_points
+
+class IterNet2D(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.layers = torch.nn.Sequential(
+            torch.nn.Linear(1, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 16),
+            torch.nn.ReLU(),
+            torch.nn.Linear(16, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, 16),
+            torch.nn.ReLU(),
+            torch.nn.Linear(16, 6)
+        )
+        self.short = torch.nn.Sequential(
+            torch.nn.Linear(1, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 8),
+            torch.nn.ReLU(),
+            torch.nn.Linear(8, 6)
+        ) 
+    
+    # (random) number (seed) input
+    def forward(self, x):
+        """
+        Affine transformation (6d) output
+        [[a, b]     [[e],
+         [c, d]] +   [f]]
+        """
+        out = self.layers(x)
+        return out
+
+def fern(r):
+    if r < 0.01:
+        out = [0, 0, 0, 0.16, 0, 0]
+    elif r < 0.86:
+        out = [0.85, 0.04, -0.04, 0.85, 0, 1.60]
+    elif r < 0.93:
+        out = [0.20, -0.26, 0.23, 0.22, 0, 1.60]
+    else:
+        out = [-0.15, 0.28, 0.26, 0.24, 0, 0.44]
+    return np.array(out)
+
+# https://github.com/javiribera/locating-objects-without-bboxes/blob/master/object-locator/losses.py
+def cdist(x, y):
+    """
+    Compute distance between each pair of the two collections of inputs.
+    :param x: Nxd Tensor
+    :param y: Mxd Tensor
+    :res: NxM matrix where dist[i,j] is the norm between x[i,:] and y[j,:],
+          i.e. dist[i,j] = ||x[i,:]-y[j,:]||
+
+    """
+    differences = x.unsqueeze(1) - y.unsqueeze(0)
+    distances = torch.sum(differences**2, -1).sqrt()
+    return distances
+
+def chamfer_loss(pred, target):
+    dist_matrix = cdist(pred, target)
+
+    # Modified Chamfer Loss
+    #print(torch.min(dist_matrix, 1))
+    #print(torch.min(dist_matrix, 0))
+    term_1 = torch.mean(torch.min(dist_matrix, 1)[0])
+    term_2 = torch.mean(torch.min(dist_matrix, 0)[0])
+    res = term_1 + term_2
+    return res
+    
+if __name__ == "__main__":
+    """
+    HYPERPARAMETERS
+    =================
+    """
+    model = IterNet2D()
+    ground = fern
+    loss_function = chamfer_loss
+    LR = 3e-5
+    weight_decay = 1e-8
+    EPOCHS = 1000
+    N_POINTS = 1000
+
+    SAVE = True
+    PATH = "weights/hidden=32_epoch=1000_n=1000"
+    """
+    =================
+    """
+
+    optimizer = torch.optim.Adam(model.parameters(), lr = LR, weight_decay = weight_decay)
+
+    outputs = []
+    losses = []
+    for epoch in range(EPOCHS):
+        pred = torch.tensor(transform_to_points(model, n=N_POINTS), requires_grad=True)
+        target = torch.tensor(transform_to_points(ground, n=N_POINTS), requires_grad=True)
+        loss = loss_function(pred, target)
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        losses.append(loss.item())
+        if epoch%100==0:
+            print(losses[-1])
+
+    if SAVE:
+        torch.save(model.state_dict(), PATH)
+    plt.plot(losses)
+    plt.show()
+
+    fig, axs = plt.subplots(2, 3)
+    xs = np.linspace(0,1,100).astype(np.float32)
+    xs_tensor = torch.unsqueeze(torch.from_numpy(xs),1)
+    model_out = np.transpose(model(xs_tensor).detach().numpy())
+    fern_out = np.transpose(np.array([fern(x) for x in xs]))
+    for i,ax in enumerate(axs.ravel()):
+        ax.plot(xs, model_out[i])
+        ax.plot(xs, fern_out[i])
+
+    plt.show()

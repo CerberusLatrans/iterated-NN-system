@@ -1,9 +1,9 @@
 import numpy as np
 from random import random
 from plotly_plotting import plot_ifs_2d, plot_ifs_3d
-from iter_funcs import barnsley_fern, barnsley_fern_3d, rand_func, serpinski_carpet, nn_to_iter_func
+from iter_funcs import barnsley_fern, barnsley_fern_3d, rand_func, serpinski_carpet, nn_to_iter_func, transform_to_points
 from plt_plotting import graph_2d, graph_2d_iter
-from model import IterNet2D
+from affine_model import IterNet2D
 import torch
 
 """
@@ -27,13 +27,17 @@ def generate(f, max_iter=10000, x0=np.array([0, 0])):
 
 
 
-n = 100000
-#generator_2d = generate(serpinski_carpet, max_iter=n)
-#plot_ifs_2d(generator_2d)
-#generator_3d = generate(barnsley_fern_3d, max_iter=1000, x0=np.array([0, 0, 0]))
-#plot_ifs_3d(generator_3d)
+n = 10000
+"""
+generator_2d = generate(barnsley_fern, max_iter=n)
+plot_ifs_2d(generator_2d)"""
+generator_3d = generate(barnsley_fern_3d, max_iter=n, x0=np.array([0, 0, 0]))
+plot_ifs_3d(generator_3d)
 
+"""
 model = IterNet2D()
-model.load_state_dict(torch.load("weights"))
-generator_2d = generate(nn_to_iter_func(model), max_iter=n)
-plot_ifs_2d(generator_2d)
+model.load_state_dict(torch.load("weights/hidden=32_epoch=1000_n=1000"))
+#generator_2d = generate(nn_to_iter_func(model), max_iter=n)
+points = transform_to_points(model, n=n)
+plot_ifs_2d(points)
+"""

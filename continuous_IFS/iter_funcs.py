@@ -2,10 +2,13 @@ import numpy as np
 from random import random
 import random as rdm
 import math
+import torch.nn as nn
 import torch
 
 def barnsley_fern(x):
     r = random()
+    #r = min(max(np.random.normal(loc=0.5, scale=0.25), 0), 1)
+    #r = min(max(np.random.normal(loc=1, scale=1), 0), 1)
     A = np.array([[1, 0],
                   [0, 1]])
     b = np.array([0, 0])
@@ -31,6 +34,7 @@ def barnsley_fern(x):
 
 def barnsley_fern_3d(x):
     r = random()
+
     A = np.array([[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]])
@@ -83,3 +87,23 @@ def nn_to_iter_func(model):
         ret = A@x + b
         return ret
     return nn
+
+def transform_to_points(func, n, p0=np.array([0, 0])):
+    #maybe always make the previous point be from the ground truth?
+    seeds = np.random.rand(n)
+    if isinstance(func, nn.Module):
+        transforms = func(torch.unsqueeze(torch.Tensor(seeds), 1)).detach().numpy()
+    else:
+        transforms = np.array([func(x) for x in seeds])
+    
+    points = []
+    p=p0
+    for i in range(n):
+        points.append(p)
+        trans = transforms[i]
+        A = np.array([[trans[0], trans[1]],
+                      [trans[2], trans[3]]])
+        b = np.array([trans[4], trans[5]]) 
+        p = A@p + b
+
+    return np.array(points)   
