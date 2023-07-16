@@ -68,17 +68,17 @@ def hutchinson_operator(
     
     return torch.cat([apply_transform(points, t) for t in transforms])
 
-def collage_loss(transforms, target, lam=1):
+def collage_loss(transforms, target, alpha=100, lam=1):
     chamfer_loss = chamfer_dist(hutchinson_operator(target, transforms), target)
 
-    #penalize large eigenvalues (close to 1) to enforce contractive transformations
+    #penalize large eigenvalues magnitudes (close to 1) to enforce contractive transformations
     def get_eigvals(t):
         A = torch.stack((t[0:3], t[3:6], t[6:9])) # 3x3
-        return torch.real(torch.linalg.eigvals(A))
+        return torch.linalg.norm(torch.view_as_real(torch.linalg.eigvals(A)), dim=1)
     
     eigvals = torch.cat([get_eigvals(t) for t in transforms])
-    #print(torch.sum(torch.square(eigvals)), eigvals)
-    return chamfer_loss + lam*torch.sum(torch.square(eigvals))
+    #print(alpha*chamfer_loss)
+    return alpha*chamfer_loss + lam*torch.sum(torch.square(eigvals))
 
 
 #x = torch.Tensor([[1,2,3],[3,4,5]])

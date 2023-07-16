@@ -1,13 +1,14 @@
 import numpy as np
 import torch
 from collage_loss import hutchinson_operator, collage_loss
-from visualize import rand_generate, plot_3d
+from visualize import rand_generate, plot_3d, get_probabilities
 import plotly.graph_objects as go
+from collagenet import CollageNet
 
 fern_probs = np.array([0.01, 0.85, 0.07, 0.07])
 fern_ifs = np.array([
     np.concatenate((
-        [0, 0, 0],
+        [0.16, 0, 0],
         [0, 0.16, 0],
         [0, 0, 0.16],
         [0, 0, 0])),
@@ -29,22 +30,24 @@ fern_ifs = np.array([
 
 
 # test generation of fern via IFS
-attractor = rand_generate(fern_ifs, fern_probs)
+fern = rand_generate(fern_ifs, fern_probs, max_iter=10000)
 #plot_3d(attractor)
 
 #test generaation of fern via collage
-fern_ifs = np.random.rand(4,12)/2
-collage = hutchinson_operator(torch.Tensor(attractor), torch.Tensor(fern_ifs))
-print(collage.size())
-print(attractor.shape)
+#ifs = fern_ifs + np.random.rand(4,12)/100
+model = CollageNet(n_transforms=4)
+model.eval()
+ifs = model(torch.unsqueeze(torch.Tensor(fern), 0))
+print(ifs)
+collage = hutchinson_operator(torch.Tensor(fern), torch.Tensor(ifs))
+fern_t = np.transpose(fern)
 
 fig = plot_3d(collage)
-attractor_t = np.transpose(attractor)
 fig.add_trace(
     go.Scatter3d(
-        x=attractor_t[0],
-        y=attractor_t[1],
-        z=attractor_t[2],
+        x=fern_t[0],
+        y=fern_t[1],
+        z=fern_t[2],
         mode="markers",
         marker_color = "red",
         marker_size = 2,
@@ -52,4 +55,18 @@ fig.add_trace(
 )
 fig.show()
 
-print(collage_loss(torch.Tensor(fern_ifs), torch.Tensor(attractor)))
+print(collage_loss(torch.Tensor(ifs), torch.Tensor(fern)))
+
+ifs_attractor = rand_generate(ifs, get_probabilities(ifs), max_iter=10000)
+fig = plot_3d(ifs_attractor)
+fig.add_trace(
+    go.Scatter3d(
+        x=fern_t[0],
+        y=fern_t[1],
+        z=fern_t[2],
+        mode="markers",
+        marker_color = "red",
+        marker_size = 2,
+    )
+)
+fig.show()
