@@ -28,45 +28,49 @@ fern_ifs = np.array([
         [0.26, 0.26, 0.39],
         [0, 0.44, 0]))])   
 
+if __name__ == "__main__":
+    # test generation of fern via IFS
+    fern = rand_generate(fern_ifs, fern_probs, max_iter=10000)
+    #plot_3d(attractor)
 
-# test generation of fern via IFS
-fern = rand_generate(fern_ifs, fern_probs, max_iter=10000)
-#plot_3d(attractor)
+    #test generaation of fern via collage
+    #ifs = fern_ifs + np.random.rand(4,12)/100
+    model = CollageNet(n_transforms=4, dim_latent=512)
+    weights = "fern_trans=4_latent=512_A=1_B=1_C=1_ep=100_n=100000_LR=0.003"
+    model.load_state_dict(torch.load("weights/{}".format(weights)))
+    model.eval()
+    ifs = model(torch.unsqueeze(torch.Tensor(fern), 0))
+    print(ifs)
+    collage = hutchinson_operator(torch.Tensor(fern), torch.Tensor(ifs))
+    fern_t = np.transpose(fern)
 
-#test generaation of fern via collage
-#ifs = fern_ifs + np.random.rand(4,12)/100
-model = CollageNet(n_transforms=4)
-model.eval()
-ifs = model(torch.unsqueeze(torch.Tensor(fern), 0))
-print(ifs)
-collage = hutchinson_operator(torch.Tensor(fern), torch.Tensor(ifs))
-fern_t = np.transpose(fern)
-
-fig = plot_3d(collage)
-fig.add_trace(
-    go.Scatter3d(
-        x=fern_t[0],
-        y=fern_t[1],
-        z=fern_t[2],
-        mode="markers",
-        marker_color = "red",
-        marker_size = 2,
+    fig = plot_3d(collage)
+    fig.add_trace(
+        go.Scatter3d(
+            x=fern_t[0],
+            y=fern_t[1],
+            z=fern_t[2],
+            mode="markers",
+            marker_color = "red",
+            marker_size = 2,
+        )
     )
-)
-fig.show()
+    fig.show()
 
-print(collage_loss(torch.Tensor(ifs), torch.Tensor(fern)))
+    print(collage_loss(torch.Tensor(ifs), torch.Tensor(fern)))
 
-ifs_attractor = rand_generate(ifs, get_probabilities(ifs), max_iter=10000)
-fig = plot_3d(ifs_attractor)
-fig.add_trace(
-    go.Scatter3d(
-        x=fern_t[0],
-        y=fern_t[1],
-        z=fern_t[2],
-        mode="markers",
-        marker_color = "red",
-        marker_size = 2,
+    probs = get_probabilities(ifs)
+    ifs_attractor = rand_generate(ifs, probs, max_iter=10000)
+    print(probs)
+    fig = plot_3d(ifs_attractor)
+    fig.add_trace(
+        go.Scatter3d(
+            x=fern_t[0],
+            y=fern_t[1],
+            z=fern_t[2],
+            mode="markers",
+            marker_color = "red",
+            marker_size = 2,
+        )
     )
-)
-fig.show()
+    fig.show()
