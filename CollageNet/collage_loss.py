@@ -60,7 +60,7 @@ def chamfer_dist(pred, target):
 How diverse are the transformations in terms of x,y,z,translation?
 What is the distance between all transformations?
 """
-def transform_dists(transforms, dim=3):
+def transform_dists(transforms, dim=3, translation=True):
     """
     Get p2 distances between all transformations (4 transforms = 6 dists between)
     By x,y,z,translation components separately
@@ -84,6 +84,8 @@ def transform_dists(transforms, dim=3):
     vecs_by_transform = [format_components(t) for t in transforms]
     # group all x,y,z,translation components separately
     vecs_by_component = torch.stack(vecs_by_transform, dim=1)
+    if not translation:
+        vecs_by_component = vecs_by_component[:-1]
 
     # all indices below the diagonal (non-redundant distance value indices)
     idxs = torch.transpose(torch.tril_indices(dim+1, dim+1, -1), 0, 1)
@@ -101,31 +103,50 @@ def transform_dists(transforms, dim=3):
 def hutchinson_operator(
         points: torch.Tensor, # size nx3
         transforms: torch.Tensor, #size mx12
-        ):
+        dim=3):
     points = torch.transpose(points,-1, -2)
     def apply_transform(pts, t):
-        A = torch.stack((t[0:3], t[3:6], t[6:9])) # 3x3
-        b = t[9:12] #1x3
+        A = t[:-dim].view(dim, dim)
+        b = t[-dim:]
         transformed = torch.add(torch.transpose(torch.matmul(A, pts), -1, -2), b)
         return transformed
     
     return torch.cat([apply_transform(points, t) for t in transforms])
 
-def collage_loss(transforms, target, alpha=1, beta=1, theta=1):
-    chamfer_loss = chamfer_dist(hutchinson_operator(target, transforms), target)
+def collage_loss(transforms, target, alpha=1, beta=1, theta=1, breakdown=False, dim=3):
+    chamfer_loss = chamfer_dist(hutchinson_operator(target, transforms, dim=dim), target)
+
+    #penalize high transform redundancy (low component distance)
+    avg_dist = 0#torch.mean(transform_dists(transforms, translation=False))
 
     #penalize large eigenvalues magnitudes (close to 1) to enforce contractive transformations
     def get_eigvals(t):
-        A = torch.stack((t[0:3], t[3:6], t[6:9])) # 3x3
+        A = t[:-dim].view(dim, dim)
         return torch.linalg.norm(torch.view_as_real(torch.linalg.eigvals(A)), dim=1)
     
-    eigvals = torch.cat([get_eigvals(t) for t in transforms])
+    #eigvals = torch.cat([get_eigvals(t) for t in transforms])
+    #mseigen = torch.mean(torch.square(eigvals))
 
-    #penalize high transform redundancy (low component distance)
-    avg_dist = torch.mean(transform_dists(transforms))
+    def get_spectral_norm(t):
+        A = t[:-dim].view(dim, dim)
+        try:
+            return torch.linalg.matrix_norm(A, ord=2)
+        except:
+            print(t)
+            
+    
+    spectral_norms = torch.Tensor([get_spectral_norm(t) for t in transforms])
+    ms_spectral = torch.mean(torch.square(spectral_norms))
+    #print(spectral_norms)
+    #ms_spectral = torch.max(spectral_norms)
 
-    print(chamfer_loss, avg_dist, torch.sum(torch.square(eigvals)))
-    return alpha*chamfer_loss - beta*avg_dist+ theta*torch.mean(torch.square(eigvals))
+    if ms_spectral>0.5:
+        alpha=0
+    total_loss = alpha*chamfer_loss + theta*ms_spectral
+    if breakdown:
+        return total_loss, chamfer_loss, avg_dist, ms_spectral
+    else:
+        return total_loss
 
 
 #x = torch.Tensor([[1,2,3],[3,4,5]])
