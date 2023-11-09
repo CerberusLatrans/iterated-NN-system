@@ -28,11 +28,15 @@ def iterate(
     return np.array(points)
 
 def ifs_interpolate(
-        source: list[Affine2D], 
-        target: list[Affine2D],
+        sources: list[Affine2D], 
+        targets: list[Affine2D],
+        mapping: list[int],
         t: int=10) -> list[list[Affine2D]]:
     #NxTxAffine
-    affine_interpolations = np.array([affine_interpolate(src, trg, t) for src,trg in zip(source, target)])
+    affine_interpolations = np.array(
+        [affine_interpolate(sources[i], targets[mapping[i]], t) for i in range(len(targets))])
     #TxNxAffine
-    ifs_interpolations = affine_interpolations.transpose((0,1,2))
+    ifs_interpolations = affine_interpolations.transpose((1,0,2,3))
     return [[t for t in ifs] for ifs in ifs_interpolations]
+
+
