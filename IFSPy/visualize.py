@@ -21,11 +21,11 @@ def render_points(
     pixels = normalized*np.asarray(dim)
     floored_pixels = np.floor(pixels).astype(int)
     img = np.zeros(dim)
-    for px in floored_pixels:
+    for row,col in flip_vert(floored_pixels, dim[1], to_raster=True):
         try:
-            img[dim[1]-px[1], px[0]] = 255
+            img[row, col] = 255
         except:
-            print(px)
+            print((row, col))
     pil_image = Image.fromarray(img)
     if show:
         pil_image.show()
@@ -52,18 +52,35 @@ def render_transforms(
         transforms: list[Affine2D], 
         dim: tuple[int, int] = (200,200),
         show: bool = False) -> Image.Image:
-    points = []
     image = Image.new("RGB", dim) 
     draw = ImageDraw.Draw(image)
-    unit_sqr = np.array([[0,0],[0,dim[1]],[dim[0],dim[1]],[dim[0],0]])
-    draw.polygon(unit_sqr,fill="red")
-    transformed_sqrs = []
+    half_width, half_height = int(dim[0]/2), int(dim[1]/2)
+    unit_sqr = [[0,0],[0,half_width],[half_height,half_width],[half_height,0]]
+    draw.polygon(flip_vert(center(unit_sqr, dim),dim[1]),fill="red")
     for t in transforms:
-        transformed_sqr = [apply(t,x).astype(int) for x in unit_sqr]
-        points.extend(transformed_sqr)
-        transformed_sqrs.append(transformed_sqr)
-        draw.polygon(transformed_sqr)
+        transformed_sqr = [tuple(apply(t,x).astype(int)) for x in unit_sqr]
+        centered_sqr = center(transformed_sqr, dim)
+        draw.polygon(flip_vert(centered_sqr, dim[1]))
 
     if show:
         image.show()
     return image
+
+def center(pts: list[tuple[int, int]], dim: tuple[int, int]) -> list[tuple[int, int]]:
+    return [(pt[0]+int(dim[1]/4), pt[1]+int(dim[0]/4)) for pt in pts]
+
+def flip_vert(coords: list[tuple[int,int]], 
+              height:int, 
+              to_raster: bool = False) -> list[tuple[int,int]]:
+    """pixels in (x,y)
+
+    Args:
+        pixels (list[tuple[int,int]]): _description_
+        height (int): _description_
+
+    Returns:
+        list[tuple[int,int]]: _description_
+    """
+    if to_raster:    
+        return [(height-p[1], p[0]) for p in coords]
+    return [(p[0], height-p[1],) for p in coords]
