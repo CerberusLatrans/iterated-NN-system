@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 from affine import Point2D, PointSet2D, Affine2D
 from ifs import apply, ifs_interpolate
 from typing import Optional
+from tqdm import tqdm
 
 def normalize(points: Point2D) -> Point2D:
     """
@@ -25,20 +26,28 @@ def render_points(
         try:
             img[row, col] = 255
         except:
-            print((row, col))
+            pass
+            #print((row, col))
     pil_image = Image.fromarray(img)
     if show:
         pil_image.show()
     return pil_image
 
-def render_points_sequence(
-        sequence: list[PointSet2D],
+def render_gif(
+        sequence: list[PointSet2D] | Image.Image,
         dim: tuple[int, int] = (200,200),
         show: bool = False,
         fpath: Optional[str] = None,
         duration: int = 5,
-        loop: int = 0) -> list[Image.Image]:
-    images = [render_points(pt_set, dim=dim) for pt_set in sequence]
+        loop: int = 0,
+        image_mode: bool = False) -> list[Image.Image]:
+    
+    if image_mode:
+        images = sequence
+    else:
+        images = []
+        for i in tqdm(range(len(sequence)), desc="Rendering..."):
+            images.append(render_points(sequence[i], dim=dim))
 
     if fpath:
         images[0].save(fpath, save_all=True, append_images=images[1:], duration=duration, loop=loop)
@@ -59,6 +68,7 @@ def render_transforms(
     draw.polygon(flip_vert(center(unit_sqr, dim),dim[1]),fill="red")
     for t in transforms:
         transformed_sqr = [tuple(apply(t,x).astype(int)) for x in unit_sqr]
+        print(transformed_sqr)
         centered_sqr = center(transformed_sqr, dim)
         draw.polygon(flip_vert(centered_sqr, dim[1]))
 

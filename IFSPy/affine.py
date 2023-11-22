@@ -17,6 +17,10 @@ def apply(transform: Affine2D, point: Point2D) -> Point2D:
     point = np.append(point, 1)
     return (transform@point)[:2]
 
+def apply_set(transform: Affine2D, points: PointSet2D) -> PointSet2D:
+    points = np.append(points, np.full((len(points),1),1), axis=-1)
+    return (transform@points.T).T
+
 def affine_morph(source: Affine2D, target: Affine2D) -> Affine2D:
     """
     Quaternions?
@@ -53,5 +57,6 @@ def affine_weighted_sum(transforms: list[Affine2D], weights: list[float] = None)
     normalized_weights = weights/np.sum(weights)
     return np.average(transforms, weights=normalized_weights, axis=0)
 
-
+def affine_norm(t: Affine2D, ord: str = None) -> float:
+    return np.linalg.norm(t[:-1, :-1], ord=ord)
 

@@ -4,6 +4,7 @@ from affine import Affine2D, Point2D, PointSet2D, apply, affine_interpolate, aff
 from typing import Generator, Callable
 import itertools
 import math
+from tqdm import tqdm
 
 def get_probabilities(transforms: list[Affine2D]) -> npt.NDArray[np.float64]:
     """Determines the affine selection probabilities corresponding to relative area (determinant)
@@ -64,31 +65,6 @@ def iterate(
 
     return np.array(points)
 
-def ifs_interpolate(
-        sources: list[Affine2D], 
-        targets: list[Affine2D],
-        mapping: list[int] = None,
-        t: int=10) -> list[list[Affine2D]]:
-    """Linearly interpolates between all of the sources and corresponding targets
-
-    Args:
-        sources (list[Affine2D]): _description_
-        targets (list[Affine2D]): _description_
-        mapping (list[int]): _description_
-        t (int, optional): _description_. Defaults to 10.
-
-    Returns:
-        list[list[Affine2D]]: _description_
-    """
-    if not mapping:
-        mapping = closest_mapping(sources, targets)
-    #NxTxAffine
-    affine_interpolations = np.array(
-        [affine_interpolate(sources[i], targets[mapping[i]], t) for i in range(len(targets))])
-    #TxNxAffine
-    ifs_interpolations = affine_interpolations.transpose((1,0,2,3))
-    return [[t for t in ifs] for ifs in ifs_interpolations]
-
 def ifs_weighted_sum(systems: list[list[Affine2D]], weights: list[float] = None) -> list[Affine2D]:
     """Computes the transformation-wise weighted sum of the IFS's
 
@@ -104,7 +80,7 @@ def ifs_weighted_sum(systems: list[list[Affine2D]], weights: list[float] = None)
     return [affine_weighted_sum(transform, weights) for transform in systems_transform_wise]
     
 
-def closest_mapping(sources: list[Affine2D], targets: list[Affine2D]) -> list[int]:
+def closest_mapping(source_ifs: list[Affine2D], target_ifs: list[Affine2D]) -> list[int]:
     """_summary_
 
     Args:
@@ -114,16 +90,56 @@ def closest_mapping(sources: list[Affine2D], targets: list[Affine2D]) -> list[in
     Returns:
         list[int]: _description_
     """
-    perms = itertools.permutations(range(len(sources)))
+    perms = itertools.permutations(range(len(source_ifs)))
     smallest_diff = math.inf
     best_perm = None
     for p in perms:
-        mapped_targets = [targets[p[i]] for i in range(len(sources))]
-        diff = np.abs(np.subtract(sources, mapped_targets)).sum()
+        mapped_targets = [target_ifs[p[i]] for i in range(len(source_ifs))]
+        diff = np.abs(np.subtract(source_ifs, mapped_targets)).sum()
         if diff < smallest_diff:
             smallest_diff = diff
             best_perm = p
 
     return best_perm
+
+def ifs_interpolate(
+        source_ifs: list[Affine2D], 
+        target_ifs: list[Affine2D],
+        mapping: list[int] = None,
+        t: int=10) -> list[list[Affine2D]]:
+    """Linearly interpolates between all of the sources and corresponding targets
+
+    Args:
+        sources (list[Affine2D]): _description_
+        targets (list[Affine2D]): _description_
+        mapping (list[int]): _description_
+        t (int, optional): _description_. Defaults to 10.
+
+    Returns:
+        list[list[Affine2D]]: _description_
+    """
+    if mapping is None:
+        mapping = closest_mapping(source_ifs, target_ifs)
+    #NxTxAffine
+    affine_interpolations = np.array(
+        [affine_interpolate(source_ifs[i], target_ifs[mapping[i]], t) for i in range(len(target_ifs))])
+    #TxNxAffine
+    ifs_interpolations = affine_interpolations.transpose((1,0,2,3))
+    return [[t for t in ifs] for ifs in ifs_interpolations]
+
+def ifs_interpolate_series(
+        systems: list[list[Affine2D]], 
+        mappings: list[list[int]] = None,
+        t: int = 10) -> list[list[Affine2D]]:
+    ifs_sequence = []
+    for i in tqdm(range(len(systems)-1), desc="Interpolating..."):
+        source_ifs, target_ifs = systems[i], systems[i+1]
+        mapping = None if mappings is None else mappings[i]
+        ifs_sequence.extend(ifs_interpolate(source_ifs, target_ifs, mapping=mapping, t=t))
+    
+    return ifs_sequence
+    
+
+
 
 
