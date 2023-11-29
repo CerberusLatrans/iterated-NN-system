@@ -7,10 +7,12 @@ from tqdm import tqdm
 def main():
    """render_transforms(FERN2D).convert('RGB').save('fern1transforms.png')
    render_transforms(CYCLO_FERN).convert('RGB').save('fern2transforms.png')
-   render_transforms(MAPLE2D).convert('RGB').save('mapletransforms.png')"""
-   """fern = render_points(iterate(FERN2D, max_iter=100000),show=True, dim=(400,400))
+   render_transforms(MAPLE2D).convert('RGB').save('mapletransforms.png')
+
+   fern = render_points(iterate(FERN2D, max_iter=100000),show=True, dim=(400,400))
    fern2 = render_points(iterate(CYCLO_FERN, max_iter=100000),show=True, dim=(400,400))
    maple = render_points(iterate(MAPLE2D, max_iter=100000),show=True, dim=(400,400))
+   
    fern.convert('RGB').save("fern1.png")
    fern2.convert('RGB').save("fern2.png")
    maple.convert('RGB').save("maple.png")"""

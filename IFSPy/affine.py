@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Annotated, Generator, TypeVar
-import numpy.typing as npt 
+import numpy.typing as npt
+import math
 
 N = TypeVar("N")
 Affine2D = Annotated[npt.NDArray[np.float64], (3,3)]
@@ -59,4 +60,34 @@ def affine_weighted_sum(transforms: list[Affine2D], weights: list[float] = None)
 
 def affine_norm(t: Affine2D, ord: str = None) -> float:
     return np.linalg.norm(t[:-1, :-1], ord=ord)
+
+def translate(t: Affine2D, shift: tuple[float, float] = (0, 0)) -> Affine2D:
+    trans_mat = np.array([[1, 0, shift[0]],
+                          [0, 1, shift[1]],
+                          [0, 0 ,1]])
+    return trans_mat@t
+
+def reflect(t: Affine2D, axes: tuple[bool, bool] = (False, False)) -> Affine2D:
+    trans_mat = np.array([[-1 if axes[0] else 1, 0, 0],
+                          [0, -1 if axes[1] else 1, 0],
+                          [0, 0 ,1]])
+    return trans_mat@t
+
+def scale(t: Affine2D, factor: tuple[float, float] = (1, 1)) -> Affine2D:
+    scale_mat = np.array([[factor[0], 0, 0],
+                          [0, factor[1], 0],
+                          [0, 0 ,1]])
+    return scale_mat@t
+
+def rotate(t: Affine2D, degrees: float = 0) -> Affine2D:
+    scale_mat = np.array([[math.cos(degrees), -math.sin(degrees), 0],
+                          [math.sin(degrees), math.cos(degrees), 0],
+                          [0, 0 ,1]])
+    return scale_mat@t
+
+def shear(t: Affine2D, factor: tuple[float, float] = (0, 0)) -> Affine2D:
+    shear_mat = np.array([[1, factor[0], 0],
+                          [factor[1], 1, 0],
+                          [0, 0 ,1]])
+    return shear_mat@t
 

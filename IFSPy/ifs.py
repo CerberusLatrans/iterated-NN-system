@@ -19,7 +19,7 @@ def get_probabilities(transforms: list[Affine2D]) -> npt.NDArray[np.float64]:
     dets = [np.abs(np.linalg.det(t)) for t in As]
     return np.array(dets) / np.sum(dets)
 
-def random_choice(transforms: list[Affine2D]) -> Affine2D:
+def random_choice(transforms: list[Affine2D]) -> Generator[Affine2D, None, None]:
     """Selects a transform randomly
 
     Args:
@@ -28,9 +28,9 @@ def random_choice(transforms: list[Affine2D]) -> Affine2D:
     Returns:
         Affine2D: _description_
     """
-    return transforms[np.random.choice(len(transforms))]
+    while True: yield transforms[np.random.choice(len(transforms))]
 
-def weighted_random_choice(transforms: list[Affine2D]) -> Affine2D:
+def weighted_random_choice(transforms: list[Affine2D], weights: list[float] = None) -> Generator[Affine2D, None, None]:
     """Selects a transform randomly according to determinant weights
 
     Args:
@@ -39,19 +39,23 @@ def weighted_random_choice(transforms: list[Affine2D]) -> Affine2D:
     Returns:
         Affine2D: _description_
     """
-    weights = get_probabilities(transforms)
-    return transforms[np.random.choice(len(transforms), p=weights)]
+    if not weights: weights = get_probabilities(transforms)
+    while True: yield transforms[np.random.choice(len(transforms), p=weights)]
+
+def markov_chooser(transforms: list[Affine2D], transition_matrix: list[list[float]]) -> Affine2D:
+    state: int = np.random.choice(len(transition_matrix))
+
+    while True:
+        yield transforms[state:=np.random.choice(len(transforms), p=transition_matrix[state])]
 
 def iterate(
-    transforms: list[Affine2D], 
-    chooser: Callable[[list[Affine2D]], Affine2D]= weighted_random_choice, 
+    chooser: Generator[Affine2D, None, None]= weighted_random_choice, 
     max_iter: int=1000,
     origin: Point2D=np.array([0,0])
     ) -> PointSet2D:
-    """Runs an IFS using the transforms to a number of iterations
+    """Runs an IFS using the chooser to a number of iterations
 
     Args:
-        transforms (list[Affine2D]): _description_
         chooser (Callable[[list[Affine2D]], Affine2D], optional): _description_. Defaults to weighted_random_choice.
         max_iter (int, optional): _description_. Defaults to 1000.
         origin (Point2D, optional): _description_. Defaults to np.array([0,0]).
@@ -61,7 +65,7 @@ def iterate(
     """
     points: list[Point2D] = [origin]
     for i in range(max_iter):
-        points.append(apply(chooser(transforms),points[-1]))
+        points.append(apply(next(chooser),points[-1]))
 
     return np.array(points)
 
