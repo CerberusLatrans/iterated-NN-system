@@ -1,58 +1,21 @@
 import numpy as np
-import numpy.typing as npt
-from affine import Affine2D, Point2D, PointSet2D, apply, affine_interpolate, affine_weighted_sum
-from typing import Generator, Callable
 import itertools
-import math
 from tqdm import tqdm
+from typing import Generator, Annotated, TypeVar
+import numpy.typing as npt
 
-def get_probabilities(transforms: list[Affine2D]) -> npt.NDArray[np.float64]:
-    """Determines the affine selection probabilities corresponding to relative area (determinant)
+from affine import Affine2D, Point2D, PointSet2D, apply, affine_interpolate, affine_weighted_sum
+from markov import weighted_random_choice
 
-    Args:
-        transforms (list[Affine2D]): _description_
-
-    Returns:
-        npt.NDArray[np.float64]: _description_
-    """
-    As = [np.array([t[0,:2], t[1,:2]]) for t in transforms]
-    dets = [np.abs(np.linalg.det(t)) for t in As]
-    return np.array(dets) / np.sum(dets)
-
-def random_choice(transforms: list[Affine2D]) -> Generator[Affine2D, None, None]:
-    """Selects a transform randomly
-
-    Args:
-        transforms (list[Affine2D]): _description_
-
-    Returns:
-        Affine2D: _description_
-    """
-    while True: yield transforms[np.random.choice(len(transforms))]
-
-def weighted_random_choice(transforms: list[Affine2D], weights: list[float] = None) -> Generator[Affine2D, None, None]:
-    """Selects a transform randomly according to determinant weights
-
-    Args:
-        transforms (list[Affine2D]): _description_
-
-    Returns:
-        Affine2D: _description_
-    """
-    if not weights: weights = get_probabilities(transforms)
-    while True: yield transforms[np.random.choice(len(transforms), p=weights)]
-
-def markov_chooser(transforms: list[Affine2D], transition_matrix: list[list[float]]) -> Affine2D:
-    state: int = np.random.choice(len(transition_matrix))
-
-    while True:
-        yield transforms[state:=np.random.choice(len(transforms), p=transition_matrix[state])]
+N = TypeVar("N")
+Ifs2D = Annotated[npt.ArrayLike[Affine2D], (N,3,3)]
+AffineGenerator = Generator[Affine2D, None, None]
 
 def iterate(
-    chooser: Generator[Affine2D, None, None]= weighted_random_choice, 
-    max_iter: int=1000,
-    origin: Point2D=np.array([0,0])
-    ) -> PointSet2D:
+        chooser: AffineGenerator=weighted_random_choice, 
+        max_iter: int=1000,
+        origin: Point2D=np.array([0,0])
+        ) -> PointSet2D:
     """Runs an IFS using the chooser to a number of iterations
 
     Args:
@@ -69,7 +32,10 @@ def iterate(
 
     return np.array(points)
 
-def ifs_weighted_sum(systems: list[list[Affine2D]], weights: list[float] = None) -> list[Affine2D]:
+def ifs_weighted_sum(
+        systems: npt.ArrayLike[Ifs2D],
+        weights: npt.ArrayLike[float] = None
+        ) -> Ifs2D:
     """Computes the transformation-wise weighted sum of the IFS's
 
     Args:
@@ -82,35 +48,13 @@ def ifs_weighted_sum(systems: list[list[Affine2D]], weights: list[float] = None)
     systems_transform_wise = np.transpose(systems, (1,0,2,3))
    
     return [affine_weighted_sum(transform, weights) for transform in systems_transform_wise]
-    
-
-def closest_mapping(source_ifs: list[Affine2D], target_ifs: list[Affine2D]) -> list[int]:
-    """_summary_
-
-    Args:
-        sources (list[Affine2D]): _description_
-        targets (list[Affine2D]): _description_
-
-    Returns:
-        list[int]: _description_
-    """
-    perms = itertools.permutations(range(len(source_ifs)))
-    smallest_diff = math.inf
-    best_perm = None
-    for p in perms:
-        mapped_targets = [target_ifs[p[i]] for i in range(len(source_ifs))]
-        diff = np.abs(np.subtract(source_ifs, mapped_targets)).sum()
-        if diff < smallest_diff:
-            smallest_diff = diff
-            best_perm = p
-
-    return best_perm
 
 def ifs_interpolate(
-        source_ifs: list[Affine2D], 
-        target_ifs: list[Affine2D],
-        mapping: list[int] = None,
-        t: int=10) -> list[list[Affine2D]]:
+        source_ifs: Ifs2D, 
+        target_ifs: Ifs2D,
+        mapping: npt.ArrayLike[int] = None,
+        t: int=10
+        ) -> npt.ArrayLike[Ifs2D]:
     """Linearly interpolates between all of the sources and corresponding targets
 
     Args:
@@ -132,9 +76,10 @@ def ifs_interpolate(
     return [[t for t in ifs] for ifs in ifs_interpolations]
 
 def ifs_interpolate_series(
-        systems: list[list[Affine2D]], 
-        mappings: list[list[int]] = None,
-        t: int = 10) -> list[list[Affine2D]]:
+        systems: npt.ArrayLike[Ifs2D], 
+        mappings: npt.ArrayLike[npt.ArrayLike[int]] = None,
+        t: int = 10
+        ) -> npt.ArrayLike[Ifs2D]:
     ifs_sequence = []
     for i in tqdm(range(len(systems)-1), desc="Interpolating..."):
         source_ifs, target_ifs = systems[i], systems[i+1]
@@ -143,7 +88,30 @@ def ifs_interpolate_series(
     
     return ifs_sequence
     
+def closest_mapping(
+        source_ifs: Ifs2D,
+        target_ifs: Ifs2D
+        ) -> npt.ArrayLike[int]:
+    """_summary_
 
+    Args:
+        sources (list[Affine2D]): _description_
+        targets (list[Affine2D]): _description_
+
+    Returns:
+        list[int]: _description_
+    """
+    perms = itertools.permutations(range(len(source_ifs)))
+    smallest_diff = np.inf
+    best_perm = None
+    for p in perms:
+        mapped_targets = [target_ifs[p[i]] for i in range(len(source_ifs))]
+        diff = np.abs(np.subtract(source_ifs, mapped_targets)).sum()
+        if diff < smallest_diff:
+            smallest_diff = diff
+            best_perm = p
+
+    return best_perm
 
 
 

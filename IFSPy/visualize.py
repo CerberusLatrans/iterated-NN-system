@@ -1,11 +1,15 @@
 import numpy as np
 from PIL import Image, ImageDraw
-from affine import Point2D, PointSet2D, Affine2D
-from ifs import apply, ifs_interpolate
 from typing import Optional
 from tqdm import tqdm
 
-def normalize(points: Point2D) -> Point2D:
+from affine import Point2D, PointSet2D
+from ifs import Ifs2D, apply
+
+
+def normalize(
+        points: Point2D
+        ) -> Point2D:
     """
     Normalizes all points to have values in range [0,1]
     """
@@ -40,7 +44,8 @@ def render_gif(
         fpath: Optional[str] = None,
         duration: int = 5,
         loop: int = 0,
-        image_mode: bool = False) -> list[Image.Image]:
+        image_mode: bool = False
+        ) -> list[Image.Image]:
     
     if image_mode:
         images = sequence
@@ -58,9 +63,10 @@ def render_gif(
     return images
 
 def render_transforms(
-        transforms: list[Affine2D], 
+        transforms: Ifs2D, 
         dim: tuple[int, int] = (200,200),
-        show: bool = False) -> Image.Image:
+        show: bool = False
+        ) -> Image.Image:
     image = Image.new("RGB", dim) 
     draw = ImageDraw.Draw(image)
     half_width, half_height = int(dim[0]/2), int(dim[1]/2)
@@ -76,12 +82,17 @@ def render_transforms(
         image.show()
     return image
 
-def center(pts: list[tuple[int, int]], dim: tuple[int, int]) -> list[tuple[int, int]]:
+def center(
+        pts: PointSet2D,
+        dim: tuple[int, int]
+        ) -> PointSet2D:
     return [(pt[0]+int(dim[1]/4), pt[1]+int(dim[0]/4)) for pt in pts]
 
-def flip_vert(coords: list[tuple[int,int]], 
-              height:int, 
-              to_raster: bool = False) -> list[tuple[int,int]]:
+def flip_vert(
+        coords: PointSet2D, 
+        height:int, 
+        to_raster: bool = False
+        ) -> PointSet2D:
     """pixels in (x,y)
 
     Args:
