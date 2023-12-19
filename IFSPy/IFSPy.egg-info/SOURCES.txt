@@ -1,5 +1,0 @@
-setup.py
-IFSPy.egg-info/PKG-INFO
-IFSPy.egg-info/SOURCES.txt
-IFSPy.egg-info/dependency_links.txt
-IFSPy.egg-info/top_level.txt
