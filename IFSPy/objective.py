@@ -1,11 +1,17 @@
 import numpy as np
 import numpy.typing as npt
-from affine import PointSet2D, Affine2D, apply_set, affine_norm
 from typing import TypeVar, Annotated
+
+from affine import PointSet2D, apply_set, affine_norm
+from ifs import Ifs2D
 
 N = TypeVar("N")
 M = TypeVar("M")
-def cdist(x: Annotated[PointSet2D, N], y: Annotated[PointSet2D, M]) -> Annotated[npt.NDArray[np.float64], (N,M)]:
+
+def cdist(
+        x: Annotated[PointSet2D, N],
+        y: Annotated[PointSet2D, M]
+        ) -> Annotated[npt.NDArray[np.float64], (N,M)]:
     """
     Compute distance between each pair of the two collections of inputs.
     :param x: Nxd Tensor
@@ -47,7 +53,10 @@ def cdist(x: Annotated[PointSet2D, N], y: Annotated[PointSet2D, M]) -> Annotated
     # NxM
     return distances
 
-def chamfer_dist(pred: PointSet2D, target: PointSet2D) -> float:
+def chamfer_dist(
+        pred: PointSet2D,
+        target: PointSet2D
+        ) -> float:
     dist_matrix = cdist(pred, target)
 
     # Modified Chamfer Loss (mean instead of sum, no squaring)
@@ -62,14 +71,18 @@ def chamfer_dist(pred: PointSet2D, target: PointSet2D) -> float:
     res = term_1 + term_2
     return res
 
-
 def hutchinson(
-        transforms: list[Affine2D],
+        transforms: Ifs2D,
         points: PointSet2D        
     ) -> PointSet2D:
     return np.concatenate([apply_set(t, points) for t in transforms])
 
-def collage_loss(transforms: list[Affine2D], target: PointSet2D, a1: float = 1, a2: float = 1) -> float:
+def collage_loss(
+        transforms: Ifs2D,
+        target: PointSet2D,
+        a1: float = 1,
+        a2: float = 1
+        ) -> float:
     chamfer_loss = chamfer_dist(hutchinson(transforms, target), target)  
     norms = np.array([affine_norm(t) for t in transforms])
     ms_norm = np.mean(np.square(norms))

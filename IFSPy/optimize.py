@@ -1,10 +1,13 @@
 import numpy as np
 import pyswarms as psw
 from pyswarms.utils.functions import single_obj
-from objective import collage_loss
-from affine import PointSet2D, Affine2D, apply_set, affine_norm
+
 import numpy.typing as npt
 from typing import Annotated, Callable, TypeVar
+
+from objective import collage_loss
+from affine import PointSet2D, Affine2D, apply_set, affine_norm
+
 
 N = TypeVar("N") #N particles
 D = TypeVar("D") #dimensions

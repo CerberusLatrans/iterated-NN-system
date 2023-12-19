@@ -1,4 +1,5 @@
 import numpy as np
+from markov import get_probabilities
 
 EHRENFEST = np.array([
     [0, 1, 0, 0],
@@ -32,7 +33,7 @@ ERG_REG_SUM_1 = np.array([[.4,.2,.2,.2],
                          [.2,.4,.2,.2],
                          [.4,0,.4,.2]])
 
-AREA_WEIGHTED = np.full((4,4), [0.01, 0.85, 0.07, 0.07])
+AREA_WEIGHTED = lambda transforms: np.full((n:=len(transforms), n), get_probabilities(transforms))
 
 IDENTITY = np.identity
 

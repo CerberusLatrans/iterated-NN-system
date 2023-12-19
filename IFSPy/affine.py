@@ -1,11 +1,6 @@
 import numpy as np
-from typing import Annotated, TypeVar, Optional
-import numpy.typing as npt
-
-N = TypeVar("N")
-Affine2D = Annotated[npt.ArrayLike[np.float64], (3,3)]
-Point2D = Annotated[npt.ArrayLike[np.float64], (2,1)]
-PointSet2D = Annotated[npt.ArrayLike[Point2D], (N,2,1)]
+from typing import Optional
+from ifs_typing import Affine2D, Point2D, PointSet2D
 
 def apply(
         transform: Affine2D, 
