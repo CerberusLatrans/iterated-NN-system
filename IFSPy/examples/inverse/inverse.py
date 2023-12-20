@@ -1,7 +1,7 @@
 import numpy as np
 import pyswarms as psw
 from optimize import get_bounds, get_dim, get_obj_func
-from system.leaves import FERN2D, SQUARE
+from catalogue.leaves import FERN2D, SQUARE
 from ifs import iterate
 from optimize import particle_to_transforms
 from visualize import render_transforms, render_points
@@ -15,7 +15,7 @@ bounds = (np.array([-1,-1,-1,-1,-2,-2]),
 # Call instance of PSO
 optimizer = psw.single.GlobalBestPSO(n_particles=20, dimensions=get_dim(), options=options, bounds=get_bounds())
 
-target = iterate(SQUARE, max_iter=1000)
+target = iterate(SQUARE, num_iters=1000)
 # Perform optimization
 obj_func = get_obj_func(target)
 cost, winner = optimizer.optimize(obj_func, iters=1)

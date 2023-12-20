@@ -1,14 +1,14 @@
-from system.leaves import FERN2D, MAPLE2D, SQUARE, CYCLO_FERN
+from catalogue.leaves import FERN2D, MAPLE2D, SQUARE, CYCLO_FERN
 from ifs import iterate_indexed, ifs_interpolate_series
 from visualize import render_points, render_gif, render_transforms, ColorScheme
 from markov import markov_interpolate, markov_indexer
-from chains import AREA_WEIGHTED
+from catalogue.chains import AREA_WEIGHTED
 import numpy as np
 
 def main():
     #each step shows another layer of self-similarity
     obj = MAPLE2D
-    attractor, idxs = iterate_indexed(markov_indexer(AREA_WEIGHTED(obj)), obj, max_iter=100000)
+    attractor, idxs = iterate_indexed(markov_indexer(AREA_WEIGHTED(obj)), obj, num_iters=100000)
     attractors, indices = [], []
     for i in range(20):
         attractors.append(attractor)

@@ -8,23 +8,27 @@ from affine import apply, affine_interpolate, affine_weighted_sum
 from markov import weighted_random_chooser
 from ifs_typing import Point2D, PointSet2D, Ifs2D, AffineGenerator
 
+"""
+A modules for iterating, combining, and interpolating between function systems.
+"""
+
 def iterate(
         chooser: AffineGenerator=weighted_random_chooser, 
-        max_iter: int=1000,
+        num_iters: int=10000,
         origin: Point2D=np.array([0,0]),
         ) -> PointSet2D:
-    """Runs an IFS using the chooser to a number of iterations
+    """Iteratively applies chosen affine transformations to the last point. Plays the Chaos Game.
 
     Args:
-        chooser (Callable[[list[Affine2D]], Affine2D], optional): _description_. Defaults to weighted_random_choice.
-        max_iter (int, optional): _description_. Defaults to 1000.
-        origin (Point2D, optional): _description_. Defaults to np.array([0,0]).
+        chooser (AffineGenerator, optional): Generates the next transformation to apply. Defaults to weighted_random_chooser.
+        num_iters (int, optional): The number of iterations to run. Defaults to 10000.
+        origin (Point2D, optional): The starting point. Defaults to np.array([0,0]).
 
     Returns:
-        PointSet2D: _description_
+        PointSet2D: The resulting set of points after iterating.
     """
     points: PointSet2D = [origin]
-    for i in range(max_iter):
+    for i in range(num_iters):
         points.append(apply(next(chooser),points[-1]))
 
     return np.array(points)
@@ -32,12 +36,23 @@ def iterate(
 def iterate_indexed(
         indexer: Generator[int, None, None],
         transforms: Ifs2D,
-        max_iter: int=1000,
+        num_iters: int=10000,
         origin: Point2D=np.array([0,0]),
         ) -> tuple[PointSet2D, list[int]]:
+    """Version of `ifs.iterate` that also returns the transformation index of each choice.
+
+    Args:
+        indexer (Generator[int, None, None]): Generates the index of the next transformation to apply.
+        transforms (Ifs2D): The transformations from which to pick.
+        num_iters (int, optional): The number of iterations to run. Defaults to 10000.
+        origin (Point2D, optional): The starting point. Defaults to np.array([0,0]).
+
+    Returns:
+        tuple[PointSet2D, list[int]]: The resulting set of points after iterating and the indices of the transformation choices.
+    """
     points: PointSet2D = [origin]
     idxs = []
-    for i in range(max_iter):
+    for i in range(num_iters):
         points.append(apply(transforms[idx:=next(indexer)],points[-1]))
         idxs.append(idx)
 
@@ -47,11 +62,14 @@ def ifs_weighted_sum(
         systems: list[Ifs2D],
         weights: npt.NDArray[np.float64] = None
         ) -> Ifs2D:
-    """Computes the transformation-wise weighted sum of the IFS's
+    """ Computes the linearly weighted sum across multiple function systems.
 
     Args:
-        systems (list[list[Affine2D]]): _description_
-        weights (list[float]): _description_
+        systems (list[Ifs2D]): The set of equally sized systems to combine (by affine transformation).
+        weights (npt.NDArray[np.float64], optional): Corresponding linear weights for each system. Defaults to None.
+
+    Returns:
+        Ifs2D: The resulting linearly weighted function system.
     """
     #MxNxAffine -> NxMxAffine
     if weights is None:
@@ -66,16 +84,16 @@ def ifs_interpolate(
         mapping: npt.NDArray[np.int64] = None,
         t: int=10
         ) -> list[Ifs2D]:
-    """Linearly interpolates between all of the sources and corresponding targets
+    """Linearly interpolates between the two systems with t timeteps.
 
     Args:
-        sources (list[Affine2D]): _description_
-        targets (list[Affine2D]): _description_
-        mapping (list[int]): _description_
-        t (int, optional): _description_. Defaults to 10.
+        source_ifs (Ifs2D): The initial system.
+        target_ifs (Ifs2D): The final system.
+        mapping (npt.NDArray[np.int64], optional): A bijective mapping from the source to target system functions. Defaults to None (closest mapping).
+        t (int, optional): The number of steps between. Defaults to 10.
 
     Returns:
-        list[list[Affine2D]]: _description_
+        list[Ifs2D]: A series of t interpolated systems from source to target.
     """
     if mapping is None:
         mapping = closest_mapping(source_ifs, target_ifs)
@@ -91,6 +109,16 @@ def ifs_interpolate_series(
         mappings: npt.NDArray[np.int64] = None,
         t: int = 10
         ) -> list[Ifs2D]:
+    """Linearly interpolates between n systems with n*t total timeteps.
+
+    Args:
+        systems (list[Ifs2D]): The set of equally sized systems to interpolate sequentially between.
+        mappings (npt.NDArray[np.int64], optional): A series of bijective mappings between the transformations of each pair of systems. Defaults to None (closest mappings).
+        t (int, optional): The number of steps between each system. Defaults to 10.
+
+    Returns:
+        list[Ifs2D]: A series of n*t interpolated sequential systems.
+    """
     ifs_sequence = []
     for i in tqdm(range(len(systems)-1), desc="Interpolating..."):
         source_ifs, target_ifs = systems[i], systems[i+1]
@@ -103,14 +131,14 @@ def closest_mapping(
         source_ifs: Ifs2D,
         target_ifs: Ifs2D
         ) -> npt.NDArray[np.int64]:
-    """_summary_
+    """Computes the closest bijective transformation mapping between two systems by finding the minimum distance permutation.
 
     Args:
-        sources (list[Affine2D]): _description_
-        targets (list[Affine2D]): _description_
+        source_ifs (Ifs2D): The system with "domain" functions.
+        target_ifs (Ifs2D): The system with "range" functions.
 
     Returns:
-        list[int]: _description_
+        npt.NDArray[np.int64]: The closest (smallest matrix difference) computed mapping.
     """
     perms = itertools.permutations(range(len(source_ifs)))
     smallest_diff = np.inf

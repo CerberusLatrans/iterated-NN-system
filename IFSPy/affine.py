@@ -1,12 +1,22 @@
 import numpy as np
-from typing import Optional
 from ifs_typing import Affine2D, Point2D, PointSet2D
+
+"""
+A module for creating, applying, and interpolating between affine transformations.
+"""
 
 def apply(
         transform: Affine2D, 
-        point: Point2D) -> Point2D:
-    """
-    Applies the affine transformation to the given point
+        point: Point2D
+        ) -> Point2D:
+    """ Applies an affine transformation to a point.
+
+    Args:
+        transform (Affine2D): A 2D affine tranformation.
+        point (Point2D): A 2D cartesian coordinate.
+
+    Returns:
+        Point2D: The resulting post-transformation point.
     """
     point = np.append(point, 1)
     return (transform@point)[:2]
@@ -15,6 +25,15 @@ def apply_set(
         transform: Affine2D,
         points: PointSet2D
         ) -> PointSet2D:
+    """ Applies an affine transformation to a set of points.
+
+    Args:
+        transform (Affine2D): A 2D affine tranformation.
+        points (PointSet2D): A set of 2D cartesian coordinates.
+
+    Returns:
+        PointSet2D: The resulting post-transformation set of points.
+    """
     points = np.append(points, np.full((len(points),1),1), axis=-1)
     return (transform@points.T).T
 
@@ -30,34 +49,33 @@ def affine_morph(
 def affine_interpolate(
         source: Affine2D, 
         target: Affine2D, 
-        t: int=10
+        t: int = 10
         ) -> list[Affine2D]:
-    """Linearly interpolates between the source an target with t timeteps
+    """Linearly interpolates between the two transformations with t timeteps.
 
     Args:
-        source (Affine2D): _description_
-        target (Affine2D): _description_
-        t (int, optional): _description_. Defaults to 10.
+        source (Affine2D): The initial affine transformation.
+        target (Affine2D): The final affine transformation.
+        t (int, optional): The number of steps between. Defaults to 10.
 
     Returns:
-        list[Affine2D]: _description_
+        list[Affine2D]: A series of t interpolated transformations from source to target.
     """
     #return [source + (target-source)*i/t for i in range(t)]
     return [affine_weighted_sum([source, target], [1-(i/t), i/t]) for i in range(t)]
 
 def affine_weighted_sum(
         transforms: list[Affine2D], 
-        weights: Optional[list[float]] = None
+        weights: list[float] = None
         ) -> Affine2D:
-    """computes the weighted sum of the given transformation
-    This is a generalization of affine.affine_interpolate
+    """ Computes the linearly weighted sum of multiple transformations.
 
     Args:
-        transforms (list[Affine2D]): _description_
-        weights (list[float]): _description_
+        transforms (list[Affine2D]): The set of transformations to combine.
+        weights (list[float]): Corresponding linear weights for each transformation.
 
     Returns:
-        Affine2D: _description_
+        Affine2D: The resulting linearly weighted affine transformation.
     """
     if weights is None:
         weights = np.full(len(transforms), 1/len(transforms))
@@ -66,37 +84,113 @@ def affine_weighted_sum(
 
 def affine_norm(
         t: Affine2D, 
-        ord: Optional[str] = None
+        ord: str = None
         ) -> float:
+    """Computes the matrix norm of the A component of the transformation.
+
+    Args:
+        t (Affine2D): An affine transformation (Ax+b).
+        ord (str, optional): Matrix norm order. Defaults to None.
+
+    Returns:
+        float: The matrix norm value.
+    """
     return np.linalg.norm(t[:-1, :-1], ord=ord)
 
-def translate(t: Affine2D, shift: tuple[float, float] = (0, 0)) -> Affine2D:
-    trans_mat = np.array([[1, 0, shift[0]],
-                          [0, 1, shift[1]],
-                          [0, 0 ,1]])
-    return trans_mat@t
+class Transformations:
+    """ A class packaging together elementary affine transformations:
+    Translation, reflection, scaling, rotation, shearing.
+    Can also be applied to affine transformations to modify them.
+    """
+    identity_affine: Affine2D = np.identity(3)
 
-def reflect(t: Affine2D, axes: tuple[bool, bool] = (False, False)) -> Affine2D:
-    trans_mat = np.array([[-1 if axes[0] else 1, 0, 0],
-                          [0, -1 if axes[1] else 1, 0],
-                          [0, 0 ,1]])
-    return trans_mat@t
+    def translate(
+            t: Affine2D = identity_affine, 
+            shift: tuple[float, float] = (0, 0)
+            ) -> Affine2D:
+        """Translates a transformation.
 
-def scale(t: Affine2D, factor: tuple[float, float] = (1, 1)) -> Affine2D:
-    scale_mat = np.array([[factor[0], 0, 0],
-                          [0, factor[1], 0],
-                          [0, 0 ,1]])
-    return scale_mat@t
+        Args:
+            t (Affine2D, optional): The affine transformation to translate. Defaults to identity_affine.
+            shift (tuple[float, float], optional): The (x,y) values to shift by. Defaults to (0, 0).
 
-def rotate(t: Affine2D, degrees: float = 0) -> Affine2D:
-    scale_mat = np.array([[np.cos(degrees), -np.sin(degrees), 0],
-                          [np.sin(degrees), np.cos(degrees), 0],
-                          [0, 0 ,1]])
-    return scale_mat@t
+        Returns:
+            Affine2D: The translated affine transformation.
+        """
+        trans_mat = np.array([[1, 0, shift[0]],
+                            [0, 1, shift[1]],
+                            [0, 0 ,1]])
+        return trans_mat@t
 
-def shear(t: Affine2D, factor: tuple[float, float] = (0, 0)) -> Affine2D:
-    shear_mat = np.array([[1, factor[0], 0],
-                          [factor[1], 1, 0],
-                          [0, 0 ,1]])
-    return shear_mat@t
+    def reflect(
+            t: Affine2D = identity_affine,
+            axes: tuple[bool, bool] = (False, False)
+            ) -> Affine2D:
+        """Reflects a transformation.
+
+        Args:
+            t (Affine2D, optional): The affine transformation to reflect. Defaults to identity_affine.
+            axes (tuple[bool, bool], optional): Whether to reflect across the (y,x) axes. Defaults to (False, False).
+
+        Returns:
+            Affine2D: The reflected affine transformation.
+        """
+        trans_mat = np.array([[-1 if axes[0] else 1, 0, 0],
+                            [0, -1 if axes[1] else 1, 0],
+                            [0, 0 ,1]])
+        return trans_mat@t
+
+    def scale(
+            t: Affine2D = identity_affine,
+            factor: tuple[float, float] = (1, 1)
+            ) -> Affine2D:
+        """Scales a transformation.
+
+        Args:
+            t (Affine2D, optional): The affine transformation to sclae. Defaults to identity_affine.
+            factor (tuple[float, float], optional): Scaling factor in the (x,y) direction. Defaults to (1, 1).
+
+        Returns:
+            Affine2D: The scaled affine transformation.
+        """
+        scale_mat = np.array([[factor[0], 0, 0],
+                            [0, factor[1], 0],
+                            [0, 0 ,1]])
+        return scale_mat@t
+
+    def rotate(
+            t: Affine2D = identity_affine,
+            degrees: float = 0
+            ) -> Affine2D:
+        """Rotates a transformation.
+
+        Args:
+            t (Affine2D, optional): The affine transformation to rotate. Defaults to identity_affine.
+            degrees (float, optional): The degrees to rotate in the clockwise direction. Defaults to 0.
+
+        Returns:
+            Affine2D: The rotated affine transformation.
+        """
+        scale_mat = np.array([[np.cos(degrees), -np.sin(degrees), 0],
+                            [np.sin(degrees), np.cos(degrees), 0],
+                            [0, 0 ,1]])
+        return scale_mat@t
+
+    def shear(
+            t: Affine2D = identity_affine,
+            factor: tuple[float, float] = (0, 0)
+            ) -> Affine2D:
+        """Shears a transformation.
+
+        Args:
+            t (Affine2D, optional): The affine transformation to shear. Defaults to identity_affine.
+            factor (tuple[float, float], optional): Shearing factor in the (x,y) direction. Defaults to (0, 0).
+
+        Returns:
+            Affine2D: The sheared affine transformation.
+        """
+        shear_mat = np.array([[1, factor[0], 0],
+                            [factor[1], 1, 0],
+                            [0, 0 ,1]])
+        return shear_mat@t
 

@@ -5,7 +5,7 @@ from typing import Generator
 
 from ifs_typing import Ifs2D, AffineGenerator, MarkovChain
 
-def get_probabilities(
+def determinant_probabilities(
         transforms: Ifs2D
         ) -> npt.NDArray[np.float64]:
     """Determines the affine selection probabilities corresponding to relative area (determinant)
@@ -46,7 +46,7 @@ def weighted_random_chooser(
     Returns:
         Affine2D: _description_
     """
-    if not weights: weights = get_probabilities(transforms)
+    if not weights: weights = determinant_probabilities(transforms)
     #while True: yield transforms[np.random.choice(len(transforms), p=weights)]
     return markov_chooser(transforms, np.full((n:=len(transforms), n), weights))
 

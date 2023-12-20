@@ -1,6 +1,10 @@
-from typing import Annotated, TypeVar, Generator
-import numpy.typing as npt
 import numpy as np
+import numpy.typing as npt
+from typing import Annotated, TypeVar, Generator
+
+"""
+A collection of custom IFSPy types.
+"""
 
 N = TypeVar("N")
 
