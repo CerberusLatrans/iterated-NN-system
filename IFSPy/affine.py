@@ -77,8 +77,7 @@ def affine_weighted_sum(
     Returns:
         Affine2D: The resulting linearly weighted affine transformation.
     """
-    if weights is None:
-        weights = np.full(len(transforms), 1/len(transforms))
+    weights = weights if weights else np.full(len(transforms), 1/len(transforms))
     normalized_weights = weights/np.sum(weights)
     return np.average(transforms, weights=normalized_weights, axis=0)
 
@@ -166,7 +165,7 @@ class Transformations:
 
         Args:
             t (Affine2D, optional): The affine transformation to rotate. Defaults to identity_affine.
-            degrees (float, optional): The degrees to rotate in the clockwise direction. Defaults to 0.
+            degrees (float, optional): The degrees to rotate in the counter-clockwise direction. Defaults to 0.
 
         Returns:
             Affine2D: The rotated affine transformation.

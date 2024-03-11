@@ -1,48 +1,46 @@
 import numpy as np
-import pyswarms as psw
-from pyswarms.utils.functions import single_obj
-
 import numpy.typing as npt
 from typing import Annotated, Callable, TypeVar
 
 from objective import collage_loss
-from affine import PointSet2D, Affine2D, apply_set, affine_norm
-
+from affine import apply_set, affine_norm
+from ifs_typing import PointSet2D, Affine2D, Ifs2D
 
 N = TypeVar("N") #N particles
 D = TypeVar("D") #dimensions
 
 #move to affine
-def from_affine_dim(affine_dim: int = 2) -> int:
-    return affine_dim**2 + affine_dim
-
-#move to ifs
-def get_dim(affine_dim: int = 2, num_codes: int = 4) -> int:
-    return num_codes*(from_affine_dim(affine_dim))
+def space_to_affine_dim(space_dim: int = 2) -> int:
+    return space_dim**2 + space_dim
 
 def get_bounds(
         a_bounds: tuple[float, float] = (-1,1),
         b_bounds: tuple[float, float] = (-2,2), 
-        affine_dim: int = 2,
-        num_codes: int = 4
+        space_dim: int = 2,
+        n_transforms: int = 4
         ) -> tuple[npt.NDArray, npt.NDArray]:
     min_a, max_a = a_bounds
     min_b, max_b = b_bounds
 
     def compute_bound(a_bound: float, b_bound: float) -> npt.NDArray:
-        return np.full((num_codes, from_affine_dim(affine_dim)), 
+        return np.full((n_transforms, space_to_affine_dim(space_dim)), 
                        np.concatenate(
-                        (np.full(affine_dim**2, a_bound),
-                        np.full(affine_dim, b_bound)
+                        (np.full(space_dim**2, a_bound),
+                        np.full(space_dim, b_bound)
                         ), axis=None))
 
     return (compute_bound(min_a, min_b).flatten(),
             compute_bound(max_a, max_b).flatten())
 
 def particle_to_transforms(particle: npt.NDArray, dim: int = 2) -> list[Affine2D]:
-    n_transforms = int(len(particle)/from_affine_dim(dim))
+    n_transforms = int(len(particle)/space_to_affine_dim(dim))
     transforms = np.reshape(particle, (n_transforms, dim, dim+1))
     return transforms + np.array([0, 0, 1])
+
+def transforms_to_particle(transforms: Ifs2D) -> npt.NDArray:
+    dim = transforms.shape[1] - 1
+    particle = [t[:dim] for t in transforms]
+    return np.array(particle).flatten()
 
 def get_obj_func(target: PointSet2D, a1: float = 1, a2: float = 1) -> Callable:
     def obj_func(particles: Annotated[npt.NDArray, (N, D)]) -> Annotated[npt.NDArray, N]:

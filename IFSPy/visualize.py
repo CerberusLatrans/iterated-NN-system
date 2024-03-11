@@ -5,7 +5,7 @@ from typing import Optional
 from tqdm import tqdm
 from enum import Enum, auto
 
-from affine import Point2D, PointSet2D
+from affine import PointSet2D
 from ifs import Ifs2D, apply
 
 class ColorScheme(Enum):
@@ -97,16 +97,21 @@ def render_gif(
 def render_transforms(
         transforms: Ifs2D, 
         dim: tuple[int, int] = (200,200),
+        scale: int = 0.5,
         show: bool = False
         ) -> Image.Image:
     image = Image.new("RGB", dim) 
     draw = ImageDraw.Draw(image)
-    half_width, half_height = int(dim[0]/2), int(dim[1]/2)
-    unit_sqr = [[0,0],[0,half_width],[half_height,half_width],[half_height,0]]
-    draw.polygon(flip_vert(center(unit_sqr, dim),dim[1]),fill="red")
+    scale_factors = [int(dim[0]*scale), int(dim[1]*scale)]
+    scaled_width, scaled_height = scale_factors
+    unit_sqr = [[0,0],[0,1],[1,1],[1,0]]
+    unit_sqr = [np.multiply(pt,scale_factors) for pt in unit_sqr]
+    draw.polygon(flip_vert(center(np.array(unit_sqr), dim),dim[1]),fill="red")
     for t in transforms:
-        transformed_sqr = [tuple(apply(t,x).astype(int)) for x in unit_sqr]
+        transformed_sqr = [apply(t,x).astype(int) for x in unit_sqr]
         print(transformed_sqr)
+        #scaled_sqr = [tuple((pt*scale_factors).astype(int)) for pt in transformed_sqr] 
+        #print(scaled_sqr)
         centered_sqr = center(transformed_sqr, dim)
         draw.polygon(flip_vert(centered_sqr, dim[1]))
 

@@ -5,7 +5,6 @@ import numpy.typing as npt
 from typing import Generator
 
 from affine import apply, affine_interpolate, affine_weighted_sum
-from markov import weighted_random_chooser
 from ifs_typing import Point2D, PointSet2D, Ifs2D, AffineGenerator
 
 """
@@ -13,7 +12,7 @@ A modules for iterating, combining, and interpolating between function systems.
 """
 
 def iterate(
-        chooser: AffineGenerator=weighted_random_chooser, 
+        chooser: AffineGenerator, 
         num_iters: int=10000,
         origin: Point2D=np.array([0,0]),
         ) -> PointSet2D:
@@ -62,7 +61,7 @@ def ifs_weighted_sum(
         systems: list[Ifs2D],
         weights: npt.NDArray[np.float64] = None
         ) -> Ifs2D:
-    """ Computes the linearly weighted sum across multiple function systems.
+    """Computes the linearly weighted sum across multiple function systems.
 
     Args:
         systems (list[Ifs2D]): The set of equally sized systems to combine (by affine transformation).
@@ -72,8 +71,7 @@ def ifs_weighted_sum(
         Ifs2D: The resulting linearly weighted function system.
     """
     #MxNxAffine -> NxMxAffine
-    if weights is None:
-        weights = np.full(len(systems), 1/len(systems))
+    weights = weights if weights else np.full(len(systems), 1/len(systems))
     systems_transform_wise = np.transpose(systems, (1,0,2,3))
    
     return [affine_weighted_sum(transform, weights) for transform in systems_transform_wise]
@@ -95,8 +93,7 @@ def ifs_interpolate(
     Returns:
         list[Ifs2D]: A series of t interpolated systems from source to target.
     """
-    if mapping is None:
-        mapping = closest_mapping(source_ifs, target_ifs)
+    mapping = mapping if mapping else closest_mapping(source_ifs, target_ifs)
     #NxTxAffine
     affine_interpolations = np.array(
         [affine_interpolate(source_ifs[i], target_ifs[mapping[i]], t) for i in range(len(target_ifs))])
@@ -109,7 +106,7 @@ def ifs_interpolate_series(
         mappings: npt.NDArray[np.int64] = None,
         t: int = 10
         ) -> list[Ifs2D]:
-    """Linearly interpolates between n systems with n*t total timeteps.
+    """Linearly interpolates between n systems with t timeteps between each.
 
     Args:
         systems (list[Ifs2D]): The set of equally sized systems to interpolate sequentially between.
@@ -122,7 +119,7 @@ def ifs_interpolate_series(
     ifs_sequence = []
     for i in tqdm(range(len(systems)-1), desc="Interpolating..."):
         source_ifs, target_ifs = systems[i], systems[i+1]
-        mapping = None if mappings is None else mappings[i]
+        mapping = mappings[i] if mappings else None
         ifs_sequence.extend(ifs_interpolate(source_ifs, target_ifs, mapping=mapping, t=t))
     
     return ifs_sequence
