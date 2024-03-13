@@ -111,7 +111,7 @@ class Transformations:
 
         Args:
             t (Affine2D, optional): The affine transformation to translate. Defaults to identity_affine.
-            shift (tuple[float, float], optional): The (x,y) values to shift by. Defaults to (0, 0).
+            shift (tuple[float, float], optional): The (x,y) values to shift along the axis of. Defaults to (0, 0).
 
         Returns:
             Affine2D: The translated affine transformation.
@@ -146,8 +146,8 @@ class Transformations:
         """Scales a transformation.
 
         Args:
-            t (Affine2D, optional): The affine transformation to sclae. Defaults to identity_affine.
-            factor (tuple[float, float], optional): Scaling factor in the (x,y) direction. Defaults to (1, 1).
+            t (Affine2D, optional): The affine transformation to scale. Defaults to identity_affine.
+            factor (tuple[float, float], optional): Scaling factor along the (x,y) axes. Defaults to (1, 1).
 
         Returns:
             Affine2D: The scaled affine transformation.

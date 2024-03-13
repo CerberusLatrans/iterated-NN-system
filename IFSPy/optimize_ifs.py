@@ -17,7 +17,8 @@ def get_bounds(
         a_bounds: tuple[float, float] = (-1,1),
         b_bounds: tuple[float, float] = (-2,2), 
         space_dim: int = 2,
-        n_transforms: int = 4
+        n_transforms: int = 4,
+        reference: Ifs2D = None,
         ) -> tuple[npt.NDArray, npt.NDArray]:
     min_a, max_a = a_bounds
     min_b, max_b = b_bounds
@@ -29,8 +30,9 @@ def get_bounds(
                         np.full(space_dim, b_bound)
                         ), axis=None))
 
-    return (compute_bound(min_a, min_b).flatten(),
-            compute_bound(max_a, max_b).flatten())
+    reference = transforms_to_particle(reference) if reference is not None else transforms_to_particle(np.identity(3))
+    return (reference+compute_bound(min_a, min_b).flatten(),
+            reference+compute_bound(max_a, max_b).flatten())
 
 def particle_to_transforms(particle: npt.NDArray, dim: int = 2) -> list[Affine2D]:
     n_transforms = int(len(particle)/space_to_affine_dim(dim))

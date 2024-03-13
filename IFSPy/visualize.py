@@ -30,7 +30,7 @@ def render_points(
         show: bool = False,
         color_scheme: ColorScheme = ColorScheme.BINARY,
         indices: list[int] = None,
-        cmap: "Colormap" = mpl.colormaps['viridis']
+        cmap: "Colormap" = mpl.colormaps['gist_rainbow']
         ) -> Image.Image:
     normalized: PointSet2D = normalize(points)
     pixels = normalized*np.asarray(dim)
@@ -70,8 +70,8 @@ def render_colors(
     
 def render_gif(
         sequence: list[PointSet2D] | Image.Image,
+        fpath: str,
         show: bool = False,
-        fpath: Optional[str] = None,
         duration: int = 5,
         loop: int = 0,
         image_mode: bool = False,
@@ -84,7 +84,9 @@ def render_gif(
     else:
         images = []
         for i in tqdm(range(len(sequence)), desc="Rendering..."):
-            images.append(render_points(sequence[i], indices=indices_sequence[i], **kwargs))
+            images.append(render_points(sequence[i],
+                                        indices=None if not indices_sequence else indices_sequence[i],
+                                        **kwargs))
 
     if fpath:
         images[0].save(fpath, save_all=True, append_images=images[1:], duration=duration, loop=loop)
@@ -98,7 +100,7 @@ def render_transforms(
         transforms: Ifs2D, 
         dim: tuple[int, int] = (200,200),
         scale: int = 0.5,
-        show: bool = False
+        show: bool = False,
         ) -> Image.Image:
     image = Image.new("RGB", dim) 
     draw = ImageDraw.Draw(image)
@@ -109,7 +111,7 @@ def render_transforms(
     draw.polygon(flip_vert(center(np.array(unit_sqr), dim),dim[1]),fill="red")
     for t in transforms:
         transformed_sqr = [apply(t,x).astype(int) for x in unit_sqr]
-        print(transformed_sqr)
+        #print(transformed_sqr)
         #scaled_sqr = [tuple((pt*scale_factors).astype(int)) for pt in transformed_sqr] 
         #print(scaled_sqr)
         centered_sqr = center(transformed_sqr, dim)
@@ -117,6 +119,7 @@ def render_transforms(
 
     if show:
         image.show()
+
     return image
 
 def center(
