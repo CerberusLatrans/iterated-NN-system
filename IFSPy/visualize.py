@@ -30,7 +30,8 @@ def render_points(
         show: bool = False,
         color_scheme: ColorScheme = ColorScheme.BINARY,
         indices: list[int] = None,
-        cmap: "Colormap" = mpl.colormaps['gist_rainbow']
+        cmap: "Colormap" = mpl.colormaps['gist_rainbow'],
+        fpath: str = None,
         ) -> Image.Image:
     normalized: PointSet2D = normalize(points)
     pixels = normalized*np.asarray(dim)
@@ -46,6 +47,8 @@ def render_points(
     pil_image = Image.fromarray(img.astype(np.uint8), mode="RGB")
     if show:
         pil_image.show()
+    if fpath:
+        pil_image.save(fpath)
     return pil_image
 
 def render_colors(

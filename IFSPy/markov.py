@@ -90,7 +90,7 @@ def weighted_random_chooser(
     Returns:
         Affine2D: A generator yielding the next transform sampled probabilistically.
     """
-    if not weights: weights = determinant_probabilities(transforms)
+    if weights is None: weights = determinant_probabilities(transforms)
     #while True: yield transforms[np.random.choice(len(transforms), p=weights)]
     return markov_chooser(transforms, np.full((n:=len(transforms), n), weights))
 
@@ -117,6 +117,7 @@ def markov_interpolate(
         t: int=10
         ) -> list[MarkovChain]:
     """Linearly interpolates between two markov transition matrices with t timeteps.
+    TODO: implement beyond [0,1]
 
     Args:
         source (MarkovChain): The initial transition matrix.

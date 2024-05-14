@@ -80,7 +80,9 @@ def ifs_interpolate(
         source_ifs: Ifs2D, 
         target_ifs: Ifs2D,
         mapping: npt.NDArray[np.int64] = None,
-        t: int=10
+        t: int=10,
+        target_start: float = 0,
+        target_end: float = 1,
         ) -> list[Ifs2D]:
     """Linearly interpolates between the two systems with t timeteps.
 
@@ -89,6 +91,8 @@ def ifs_interpolate(
         target_ifs (Ifs2D): The final system.
         mapping (npt.NDArray[np.int64], optional): A bijective mapping from the source to target system functions. Defaults to None (closest mapping).
         t (int, optional): The number of steps between. Defaults to 10.
+        target_start (float, optional): The initial weight of the target. Defaults to 0.
+        target_end (float, optional): The final weight of the target. Defaults to 1.
 
     Returns:
         list[Ifs2D]: A series of t interpolated systems from source to target.
@@ -96,10 +100,14 @@ def ifs_interpolate(
     mapping = mapping if mapping else closest_mapping(source_ifs, target_ifs)
     #NxTxAffine
     affine_interpolations = np.array(
-        [affine_interpolate(source_ifs[i], target_ifs[mapping[i]], t) for i in range(len(target_ifs))])
-    #TxNxAffine
+        [affine_interpolate(
+            source_ifs[i],
+            target_ifs[mapping[i]],
+            t, target_start, target_end)
+         for i in range(len(target_ifs))])
+    #TxNxAffine = T x num_IFS
     ifs_interpolations = affine_interpolations.transpose((1,0,2,3))
-    return [[t for t in ifs] for ifs in ifs_interpolations]
+    return [ifs for ifs in ifs_interpolations]
 
 def ifs_interpolate_series(
         systems: list[Ifs2D], 
@@ -129,6 +137,7 @@ def closest_mapping(
         target_ifs: Ifs2D
         ) -> npt.NDArray[np.int64]:
     """Computes the closest bijective transformation mapping between two systems by finding the minimum distance permutation.
+    TODO: support non-bijective for two IFS of different arity
 
     Args:
         source_ifs (Ifs2D): The system with "domain" functions.

@@ -49,7 +49,9 @@ def affine_morph(
 def affine_interpolate(
         source: Affine2D, 
         target: Affine2D, 
-        t: int = 10
+        t: int = 10,
+        target_start: float = 0,
+        target_end: float = 1,
         ) -> list[Affine2D]:
     """Linearly interpolates between the two transformations with t timeteps.
 
@@ -57,12 +59,17 @@ def affine_interpolate(
         source (Affine2D): The initial affine transformation.
         target (Affine2D): The final affine transformation.
         t (int, optional): The number of steps between. Defaults to 10.
+        target_start (float, optional): The initial weight of the target. Defaults to 0.
+        target_end (float, optional): The final weight of the target. Defaults to 1.
 
     Returns:
         list[Affine2D]: A series of t interpolated transformations from source to target.
     """
     #return [source + (target-source)*i/t for i in range(t)]
-    return [affine_weighted_sum([source, target], [1-(i/t), i/t]) for i in range(t)]
+    step = abs(target_end - target_start) / (t-1)
+    return [affine_weighted_sum([source, target],
+                                [1-(target_start+(i*step)),
+                                 target_start+(i*step)]) for i in range(t)]
 
 def affine_weighted_sum(
         transforms: list[Affine2D], 
