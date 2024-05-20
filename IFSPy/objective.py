@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.typing as npt
+import torch
 from typing import TypeVar, Annotated
 
 from affine import PointSet2D, apply_set, affine_norm
@@ -55,8 +56,14 @@ def cdist(
 
 def chamfer_dist(
         pred: PointSet2D,
-        target: PointSet2D
+        target: PointSet2D,
+        grad: bool = True,
         ) -> float:
+    if grad:
+        dists = ((pred.unsqueeze(0) - target.unsqueeze(1)) ** 2).sum(dim=2)
+        mins_a = torch.min(dists, dim=0).values
+        mins_b = torch.min(dists, dim=1).values
+        return mins_a.mean() + mins_b.mean()
     dist_matrix = cdist(pred, target)
 
     # Modified Chamfer Loss (mean instead of sum, no squaring)
@@ -73,19 +80,32 @@ def chamfer_dist(
 
 def hutchinson(
         transforms: Ifs2D,
-        points: PointSet2D        
+        points: PointSet2D,
+        grad: bool = True,        
     ) -> PointSet2D:
-    return np.concatenate([apply_set(t, points) for t in transforms])
+    if grad:
+        return torch.cat([apply_set(t, points, grad=True) for t in transforms])
+    else:
+        return np.concatenate([apply_set(t, points) for t in transforms])
 
 def collage_loss(
         transforms: Ifs2D,
         target: PointSet2D,
         a1: float = 1,
-        a2: float = 1
+        a2: float = 1,
+        dist = chamfer_dist,
+        grad: bool = True,
+        decomp: bool = True,
         ) -> float:
-    chamfer_loss = chamfer_dist(hutchinson(transforms, target), target)  
-    norms = np.array([affine_norm(t) for t in transforms])
-    ms_norm = np.mean(np.square(norms))
+    chamfer_loss = dist(hutchinson(transforms, target), target, grad=grad)  
+    if grad:
+        norms = torch.abs(torch.tensor([torch.norm(t[:-1, :-1]) for t in transforms]) - 0.5)
+        ms_norm = torch.mean(torch.square(norms))
+    else:
+        norms = np.array([affine_norm(t) for t in transforms])
+        ms_norm = np.mean(np.square(norms))
     total_loss = a1*chamfer_loss + a2*ms_norm
-    return total_loss
-                 
+    if decomp:
+        return total_loss, chamfer_loss, ms_norm
+    else:
+        return total_loss

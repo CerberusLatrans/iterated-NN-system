@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from ifs_typing import Affine2D, Point2D, PointSet2D
 
 """
@@ -23,19 +24,25 @@ def apply(
 
 def apply_set(
         transform: Affine2D,
-        points: PointSet2D
+        points: PointSet2D,
+        grad: bool = True,
         ) -> PointSet2D:
     """ Applies an affine transformation to a set of points.
 
     Args:
         transform (Affine2D): A 2D affine tranformation.
         points (PointSet2D): A set of 2D cartesian coordinates.
+        grad (bool): Use PyTorch for autograd.
 
     Returns:
         PointSet2D: The resulting post-transformation set of points.
     """
-    points = np.append(points, np.full((len(points),1),1), axis=-1)
-    return (transform@points.T).T
+    if grad:
+        points = torch.cat((points.T, torch.ones((1, len(points)))))
+        return (transform@points)[:-1].T
+    else:
+        points = np.append(points, np.full((len(points),1),1), axis=-1)
+        return (transform@points.T)[:-1].T
 
 def affine_morph(
         source: Affine2D, 
@@ -141,10 +148,11 @@ class Transformations:
         Returns:
             Affine2D: The reflected affine transformation.
         """
-        trans_mat = np.array([[-1 if axes[0] else 1, 0, 0],
+        """trans_mat = np.array([[-1 if axes[0] else 1, 0, 0],
                             [0, -1 if axes[1] else 1, 0],
                             [0, 0 ,1]])
-        return trans_mat@t
+        return trans_mat@t"""
+        return Transformations.scale(t, factor=(-1 if axes[0] else 1, -1 if axes[1] else 1))
 
     def scale(
             t: Affine2D = identity_affine,
@@ -199,4 +207,3 @@ class Transformations:
                             [factor[1], 1, 0],
                             [0, 0 ,1]])
         return shear_mat@t
-
