@@ -4,18 +4,18 @@ use rand::distributions::{Distribution, WeightedIndex};//, Uniform};
 //use rand::Rng;
 use wasm_bindgen::prelude::*;
 
-type Point = (f64, f64, f64);
+type Point = (f32, f32, f32);
 
 ///#[wasm_bindgen]
 ///pub struct MarkovChain {
-///    chain: Vec<WeightedIndex<f64>>,
+///    chain: Vec<WeightedIndex<f32>>,
 ///    rng: ThreadRng,
 ///    idx: usize,
 ///}
 ///
 ///#[wasm_bindgen]
 ///impl MarkovChain {
-///    pub fn new(matrix: Vec<Vec<f64>>) -> MarkovChain {
+///    pub fn new(matrix: Vec<Vec<f32>>) -> MarkovChain {
 ///        let mut rng = rand::thread_rng();
 ///        let uni = Uniform::new(0, matrix.len());
 ///        let idx = rng.sample(uni);
@@ -28,7 +28,7 @@ type Point = (f64, f64, f64);
 ///            idx,
 ///        }
 ///    }
-///    pub fn from_probabilities(probabilities: Vec<f64>) -> MarkovChain {
+///    pub fn from_probabilities(probabilities: Vec<f32>) -> MarkovChain {
 ///        Self::new((0..probabilities.len()).into_iter().map(|_| probabilities.clone()).collect())
 ///    }
 ///}
@@ -47,15 +47,15 @@ type Point = (f64, f64, f64);
 #[derive(Debug, Clone, Copy)]
 #[wasm_bindgen]
 pub struct AffineTransformation {
-    matrix: Matrix4<f64>,
+    matrix: Matrix4<f32>,
 }
 
 #[wasm_bindgen]
 impl AffineTransformation {
     /// Create a new affine transformation from matrix components
-    pub fn new(a: f64, b: f64, c: f64, d: f64,
-           e: f64, f: f64, g: f64, h: f64,
-           i: f64, j: f64, k: f64, l: f64) -> Self {
+    pub fn new(a: f32, b: f32, c: f32, d: f32,
+           e: f32, f: f32, g: f32, h: f32,
+           i: f32, j: f32, k: f32, l: f32) -> Self {
         AffineTransformation {
             matrix: Matrix4::new(a, b, c, d,
                                  e, f, g, h,
@@ -65,13 +65,13 @@ impl AffineTransformation {
     }
 
     /// Compute the determinant
-    fn determinant(&self) -> f64 {
+    fn determinant(&self) -> f32 {
         let determinant = self.matrix.fixed_view::<3, 3>(0, 0).determinant().abs();
         determinant
     }
 
     /// Apply the affine transformation to a point (x, y, z)
-    fn apply(&self, point: Vector4<f64>) -> Vector4<f64> {
+    fn apply(&self, point: Vector4<f32>) -> Vector4<f32> {
         self.matrix * point
     }
 }
@@ -80,7 +80,7 @@ impl AffineTransformation {
 #[wasm_bindgen]
 pub struct IteratedFunctionSystem {
     transformations: Vec<AffineTransformation>,
-    probabilities: Vec<f64>,
+    probabilities: Vec<f32>,
 }
 
 #[wasm_bindgen]
@@ -93,7 +93,7 @@ impl IteratedFunctionSystem {
             .collect::<Vec<_>>();
 
         // Normalize probabilities
-        let total: f64 = probabilities.iter().sum();
+        let total: f32 = probabilities.iter().sum();
         let probabilities = probabilities.into_iter().map(|p| p / total).collect();
 
         IteratedFunctionSystem {
@@ -122,7 +122,7 @@ impl IteratedFunctionSystem {
 }
 
 /**
-pub fn voxelize(points: Vec<(f64, f64, f64)>, size: usize) -> Vec<(isize, isize, isize)>{
+pub fn voxelize(points: Vec<(f32, f32, f32)>, size: usize) -> Vec<(isize, isize, isize)>{
 p_min = points.min(axis=0)
 p_max = points.max(axis=0)
 return (points-p_min)/(p_max-p_min)
