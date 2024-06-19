@@ -5,6 +5,28 @@ from typing import Generator
 
 from ifs_typing import Ifs2D, AffineGenerator, MarkovChain
 
+class MarkovIterator():
+    def __init__(self, transforms: Ifs2D, transition_matrix: MarkovChain = None):
+        self.transforms = transforms
+        self.state = np.random.choice(len(self.transforms))
+        if transition_matrix is not None:
+            self.transition_matrix = transition_matrix
+        else:
+            self.transition_matrix = determinant_probabilities(transforms, matrix=True)
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        ret = self.transforms[self.state]
+        self.state = np.random.choice(len(self.transition_matrix),
+                                      p=self.transition_matrix[self.state])
+        return ret
+    
+class MarkovIteratorIndexed(MarkovIterator):
+    def __init__():
+        pass
+    
 def normalize_chain(chain: MarkovChain) -> MarkovChain:
     """Normalizes a matrix such that each row sums to 1.
 
@@ -17,19 +39,26 @@ def normalize_chain(chain: MarkovChain) -> MarkovChain:
     return chain/np.expand_dims(np.sum(chain, axis=-1), -1)
 
 def determinant_probabilities(
-        transforms: Ifs2D
+        transforms: Ifs2D,
+        matrix: bool = False,
         ) -> npt.NDArray[np.float64]:
     """Determines the selection probabilities determined by relative area (determinant).
 
     Args:
         transforms (Ifs2D): The set of affine transformations.
+        matrix (bool): Whether or not to return as transition matrix.
 
     Returns:
         npt.NDArray[np.float64]: The corresponding probabilities (sum to 1).
     """
     As = [np.array([t[0,:2], t[1,:2]]) for t in transforms]
     dets = [np.abs(np.linalg.det(t)) for t in As]
-    return np.array(dets) / np.sum(dets)
+    if not matrix:
+        return np.array(dets) / np.sum(dets)
+    else:
+        return np.full(
+            shape=(len(dets), len(dets)),
+            fill_value=np.array(dets) / np.sum(dets))
 
 def markov_indexer(
         transition_matrix: MarkovChain

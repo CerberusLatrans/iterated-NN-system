@@ -2,6 +2,7 @@ import numpy as np
 import numpy.typing as npt
 import torch
 from typing import TypeVar, Annotated
+from torch.multiprocessing import Pool, set_start_method
 
 from affine import PointSet2D, apply_set, affine_norm
 from ifs import Ifs2D
@@ -97,15 +98,15 @@ def collage_loss(
         grad: bool = True,
         decomp: bool = True,
         ) -> float:
-    chamfer_loss = dist(hutchinson(transforms, target), target, grad=grad)  
+    dist_loss = dist(hutchinson(transforms, target), target, grad=grad)  
     if grad:
         norms = torch.abs(torch.tensor([torch.norm(t[:-1, :-1]) for t in transforms]) - 0.5)
         ms_norm = torch.mean(torch.square(norms))
     else:
         norms = np.array([affine_norm(t) for t in transforms])
         ms_norm = np.mean(np.square(norms))
-    total_loss = a1*chamfer_loss + a2*ms_norm
+    total_loss = a1*dist_loss + a2*ms_norm
     if decomp:
-        return total_loss, chamfer_loss, ms_norm
+        return total_loss, dist_loss, ms_norm
     else:
         return total_loss

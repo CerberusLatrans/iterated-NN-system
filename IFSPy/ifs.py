@@ -1,5 +1,6 @@
 import numpy as np
-import itertools
+from itertools import chain, permutations
+import multiprocessing
 from tqdm import tqdm
 import numpy.typing as npt
 from typing import Generator
@@ -11,10 +12,17 @@ from ifs_typing import Point2D, PointSet2D, Ifs2D, AffineGenerator
 A modules for iterating, combining, and interpolating between function systems.
 """
 
+def _iter(chooser, n, origin):
+        points: PointSet2D = [origin]
+        for i in range(n):
+            points.append(apply(next(chooser),points[-1]))
+        return points
+
 def iterate(
         chooser: AffineGenerator, 
         num_iters: int=10000,
         origin: Point2D=np.array([0,0]),
+        multi: bool = True,
         ) -> PointSet2D:
     """Iteratively applies chosen affine transformations to the last point. Plays the Chaos Game.
 
@@ -22,15 +30,22 @@ def iterate(
         chooser (AffineGenerator, optional): Generates the next transformation to apply. Defaults to weighted_random_chooser.
         num_iters (int, optional): The number of iterations to run. Defaults to 10000.
         origin (Point2D, optional): The starting point. Defaults to np.array([0,0]).
+        multi (bool, optional): Whether to compute in parallel.
 
     Returns:
         PointSet2D: The resulting set of points after iterating.
     """
-    points: PointSet2D = [origin]
-    for i in range(num_iters):
-        points.append(apply(next(chooser),points[-1]))
+ 
+    if multi and num_iters>1e6:
+        with multiprocessing.Pool() as pool:
+            n_processes = multiprocessing.cpu_count()
 
-    return np.array(points)
+            ret = np.concatenate(pool.starmap(_iter, [(chooser,
+                                      num_iters//n_processes,
+                                      origin) for _ in range(n_processes)]))
+            return ret
+    else:
+        return np.array(_iter(chooser, num_iters, origin))
 
 def iterate_indexed(
         indexer: Generator[int, None, None],
@@ -146,7 +161,7 @@ def closest_mapping(
     Returns:
         npt.NDArray[np.int64]: The closest (smallest matrix difference) computed mapping.
     """
-    perms = itertools.permutations(range(len(source_ifs)))
+    perms = permutations(range(len(source_ifs)))
     smallest_diff = np.inf
     best_perm = None
     for p in perms:

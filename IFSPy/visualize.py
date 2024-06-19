@@ -14,33 +14,24 @@ class ColorScheme(Enum):
     TRANSFORM = auto()
     TRANSITION = auto()
 
-def normalize(
-        points: PointSet2D
-        ) -> PointSet2D:
-    """
-    Normalizes all points to have values in range [0,1]
-    """
-    p_min = points.min(axis=0)
-    p_max = points.max(axis=0)
-    return (points-p_min)/(p_max-p_min)
-
 def render_points(
         points: PointSet2D, 
-        dim: tuple[int, int] = (200,200), 
+        dim: tuple[int, int] = (200,200), #(width, height)
         show: bool = False,
         color_scheme: ColorScheme = ColorScheme.BINARY,
         indices: list[int] = None,
         cmap: "Colormap" = mpl.colormaps['gist_rainbow'],
         fpath: str = None,
         ) -> Image.Image:
-    normalized: PointSet2D = normalize(points)
-    pixels = normalized*np.asarray(dim)
-    floored_pixels = np.floor(pixels).astype(int)
+    #normalized: PointSet2D = normalize(points)
+    #pixels = normalized*np.asarray(dim)
+    #floored_pixels = np.floor(pixels).astype(int)
+    coordinates = points_to_coordinates(points, dim)
     img = np.zeros((*dim,3))
     colors = render_colors(points, color_scheme, indices=indices, cmap=cmap)
-    for i,(row,col) in enumerate(flip_vert(floored_pixels, dim[1], to_raster=True)):
+    for i, (x, y) in enumerate(coordinates):
         try:
-            img[row, col] = colors[i]
+            img[y, x] = colors[i]
         except Exception as e:
             pass
             #print((row, col))
@@ -131,10 +122,19 @@ def center(
         ) -> PointSet2D:
     return [(pt[0]+int(dim[1]/4), pt[1]+int(dim[0]/4)) for pt in pts]
 
+def normalize(
+        points: PointSet2D
+        ) -> PointSet2D:
+    """
+    Normalizes all points to have values in range [0,1]
+    """
+    p_min = points.min(axis=0)
+    p_max = points.max(axis=0)
+    return (points-p_min)/(p_max-p_min)
+
 def flip_vert(
         coords: PointSet2D, 
-        height:int, 
-        to_raster: bool = False
+        height: int,
         ) -> PointSet2D:
     """pixels in (x,y)
 
@@ -145,6 +145,15 @@ def flip_vert(
     Returns:
         list[tuple[int,int]]: _description_
     """
-    if to_raster:    
-        return [(height-p[1], p[0]) for p in coords]
-    return [(p[0], height-p[1],) for p in coords]
+    return np.array([[x, height-y] for x,y in coords])
+
+
+
+def points_to_coordinates(
+        points:PointSet2D,
+        dim: tuple[int, int]):
+    normalized: PointSet2D = normalize(points)
+    rescaled = normalized*np.asarray(dim)
+    coordinates = np.floor(rescaled).astype(int)
+    vert_flipped_coordinates = flip_vert(coordinates, dim[1])
+    return vert_flipped_coordinates
