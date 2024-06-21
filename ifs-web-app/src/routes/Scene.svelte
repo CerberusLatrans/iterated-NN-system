@@ -1,32 +1,38 @@
 <script>
-    import {AffineTransformation, IteratedFunctionSystem} from "$lib/pkg/iterator";
     import {memory} from "$lib/pkg/iterator_bg.wasm";
     import * as THREE from 'three';
     import { T } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
+    import Affine from './Affine.svelte';
+    import Counter from "./Counter.svelte";
+    
+    ///let {ifs: IteratedFunctionSystem, numba} = $props()
+    ///let n = 1_000_000;
+    ///let pointsPtr = $derived(ifs.generate(n));
+    ///let points = $derived(new Float32Array(memory.buffer, pointsPtr, n*3));
+    
+    export let ifs;
+    export let numba;
 
+    let n = 100_000;
+    $: pointsPtr = ifs.generate(n);
+    $: points = new Float32Array(memory.buffer, pointsPtr, n*3);
 
-    console.log('scene')
-    let a1 = AffineTransformation.new(...[0, 0, 0, 0,
-                                    0, 0.16, 0, 0,
-                                    0, 0, 0.16, 0])
-    let a2 = AffineTransformation.new(...[0.85, 0.04, 0.04, 0,
-                                        -0.04, 0.85, 0.04, 1.6,
-                                        -0.04, -0.04, 0.85, 0])
-    let a3 = AffineTransformation.new(...[0.20, -0.26, -0.26, 0,
-                                        0.23, 0.22, -0.26, 1.6,
-                                        0.23, 0.23, 0.24, 0])   
-    let a4 = AffineTransformation.new(...[-0.15, 0.28, 0.28, 0,
-                                            0.26, 0.24, 0.28, -5,
-                                            0.26, 0.26, 0.39, 0])  
-    let ifs = IteratedFunctionSystem.new([a1, a2, a3, a4]);
-    let n = 1_000_000;
-    let pointsPtr = ifs.generate(n);
-    let points = new Float32Array(memory.buffer, pointsPtr, n*3);
-    const pointCloud = new THREE.BufferGeometry();
-    pointCloud.setAttribute('position', new THREE.BufferAttribute(points, 3));
+    $: pointCloud = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3));
 
+    let size = 20
+    let divisions = 5
+    const yGrid = new THREE.GridHelper(size, divisions)
+    const xGrid = new THREE.GridHelper(size, divisions)
+    const zGrid = new THREE.GridHelper(size, divisions)
+    xGrid.rotation.x = Math.PI/2
+    zGrid.rotation.z = Math.PI/2
     interactivity()
+
+    const a1Mat = {a:1, b:1, c:1, d:0,
+        e:0, f:1, g:0, h:0,
+        i:0, j:0, k:1, l:0}
+    console.log('Scene', numba);
 </script>
 
 
@@ -47,4 +53,8 @@
       <T is={pointCloud} />
       <T.PointsMaterial size={0.25} color='black'/>
     </T.Points>
+    <T is={xGrid} />
+    <T is={yGrid} />
+    <T is={zGrid} />
+    <Affine  {...a1Mat}/>
 </Align>
