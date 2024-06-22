@@ -53,16 +53,24 @@ pub struct AffineTransformation {
 #[wasm_bindgen]
 impl AffineTransformation {
     /// Create a new affine transformation from matrix components
-    pub fn new(a: f32, b: f32, c: f32, d: f32,
-           e: f32, f: f32, g: f32, h: f32,
-           i: f32, j: f32, k: f32, l: f32) -> Self {
-        AffineTransformation {
-            matrix: Matrix4::new(a, b, c, d,
-                                 e, f, g, h,
-                                 i, j, k, l,
-                                 0.0, 0.0, 0.0, 1.0),
-        }
-    }
+    ///pub fn new(a: f32, b: f32, c: f32, d: f32,
+    ///       e: f32, f: f32, g: f32, h: f32,
+    ///       i: f32, j: f32, k: f32, l: f32) -> Self {
+    ///    AffineTransformation {
+    ///        matrix: Matrix4::new(a, b, c, d,
+    ///                             e, f, g, h,
+    ///                             i, j, k, l,
+    ///                             0.0, 0.0, 0.0, 1.0),
+    ///    }
+    ///}
+    pub fn new(x: Vec<f32>) -> Self {
+     AffineTransformation {
+         matrix: Matrix4::new(x[0], x[1], x[2], x[3],
+                              x[4], x[5], x[6], x[7],
+                              x[8], x[9], x[10], x[11],
+                              0.0, 0.0, 0.0, 1.0),
+     }
+ }
 
     /// Compute the determinant
     fn determinant(&self) -> f32 {

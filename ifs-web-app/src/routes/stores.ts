@@ -6,7 +6,7 @@ const a1mat: Float32Array = new Float32Array([0.16, 0, 0, 0,
     0, 0.16, 0, 0,
     0, 0, 0.16, 0])
 const a2mat = new Float32Array([0.85, 0.04, 0.04, 0,
-    -0.04, 0.8, 0.03, -1,
+    -0.04, 0.8, 0.03, 1,
     -0.04, -0.05, 0.85, 0])
 const a3mat = new Float32Array([0.20, -0.2, -0.4, 0,
     0.23, 0.22, -0.26, 1.6,
@@ -27,6 +27,6 @@ initial_transformations.set(0, a1mat);
 initial_transformations.set(1, a2mat);
 initial_transformations.set(2, a3mat);
 initial_transformations.set(3, a4mat);
-initial_transformations.set(4, a4mat);
+//initial_transformations.set(4, a4mat);
 
 export const transformations = writable(initial_transformations);
