@@ -20,7 +20,7 @@
 
     $: pointCloud = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3));
 
-    let size = 20
+    let size = 10
     let divisions = 5
     const yGrid = new THREE.GridHelper(size, divisions)
     const xGrid = new THREE.GridHelper(size, divisions)
@@ -38,7 +38,7 @@
 
 <T.PerspectiveCamera
   makeDefault
-  position={[50, 50, 50]}
+  position={[25, 25, 25]}
   fov={15}
 >
 <OrbitControls/>
