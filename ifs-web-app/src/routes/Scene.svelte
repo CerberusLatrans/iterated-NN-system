@@ -1,5 +1,5 @@
 <script>
-    import {memory} from "$lib/pkg/iterator_bg.wasm";
+    import {memory} from "../lib/pkg/iterator_bg.wasm";
     import * as THREE from 'three';
     import { T } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'

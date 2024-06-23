@@ -1,5 +1,5 @@
 <script lang='ts'>
-    import {AffineTransformation, IteratedFunctionSystem} from "$lib/pkg/iterator";
+    import {AffineTransformation, IteratedFunctionSystem} from "../lib/pkg/iterator";
     import { Canvas } from '@threlte/core';
     import { transformations } from './stores';
     import SplitPane from './SplitPane.svelte';
