@@ -28,8 +28,7 @@
 	},
 	"dependencies": {
 		"@rollup/plugin-virtual": "^3.0.2",
-		"@threlte/extras": "^8.11.3",
-		"iterator": "../iterator/pkg/"
+		"@threlte/extras": "^8.11.3"
 	},
 	"type": "module"
 }
