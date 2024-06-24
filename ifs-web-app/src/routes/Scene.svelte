@@ -3,16 +3,12 @@
     import * as THREE from 'three';
     import { T } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
-    import Affine from './Affine.svelte';
+    import {AffineTransformation, IteratedFunctionSystem} from "../lib/pkg/iterator";
+    import AffineVisual from './AffineVisual.svelte';
     import Counter from "./Counter.svelte";
-    
-    ///let {ifs: IteratedFunctionSystem, numba} = $props()
-    ///let n = 1_000_000;
-    ///let pointsPtr = $derived(ifs.generate(n));
-    ///let points = $derived(new Float32Array(memory.buffer, pointsPtr, n*3));
+    import { transformations } from './stores';
     
     export let ifs;
-    export let numba;
 
     let n = 100_000;
     $: pointsPtr = ifs.generate(n);
@@ -28,11 +24,6 @@
     xGrid.rotation.x = Math.PI/2
     zGrid.rotation.z = Math.PI/2
     interactivity()
-
-    const a1Mat = {a:1, b:1, c:1, d:0,
-        e:0, f:1, g:0, h:0,
-        i:0, j:0, k:1, l:0}
-    console.log('Scene', numba);
 </script>
 
 
@@ -53,8 +44,20 @@
       <T is={pointCloud} />
       <T.PointsMaterial size={0.25} color='black'/>
     </T.Points>
+    
+    <!--
     <T is={xGrid} />
     <T is={yGrid} />
     <T is={zGrid} />
-    <Affine  {...a1Mat}/>
+    -->
+    
+    {#each $transformations as [id, m]}
+        <AffineVisual matrix={
+            new THREE.Matrix4(
+            m[0], m[1], m[2], m[3],
+            m[4], m[5], m[6], m[7],
+            m[8], m[9], m[10], m[11],
+            0, 0, 0, 1)
+        }></AffineVisual>
+    {/each}
 </Align>

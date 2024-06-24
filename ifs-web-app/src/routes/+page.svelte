@@ -4,7 +4,7 @@
     import { transformations } from './stores';
     import SplitPane from './SplitPane.svelte';
     import Scene from './Scene.svelte';
-    import ControlPanel from './ControlPanel.svelte';
+    import ControlPanel from './AffinePanel.svelte';
     
     $: affineTransforms = Array.from($transformations.values()).map((t) => AffineTransformation.new(t))
     $: ifs = IteratedFunctionSystem.new(affineTransforms);
@@ -47,7 +47,7 @@
                 {`Randomize`}
             </button>
             <Canvas size={{width:500,height:700}}>
-                <Scene {ifs} numba={randor}/>
+                <Scene {ifs}/>
             </Canvas>
         </svelte:fragment>
         <svelte:fragment slot="right">
