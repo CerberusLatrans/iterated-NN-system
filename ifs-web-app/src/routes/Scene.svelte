@@ -5,7 +5,6 @@
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
     import {AffineTransformation, IteratedFunctionSystem} from "../lib/pkg/iterator";
     import AffineVisual from './AffineVisual.svelte';
-    import Counter from "./Counter.svelte";
     import { transformations } from './stores';
     
     export let ifs;
@@ -13,7 +12,7 @@
     let n = 100_000;
     $: pointsPtr = ifs.generate(n);
     $: points = new Float32Array(memory.buffer, pointsPtr, n*3);
-
+    
     $: pointCloud = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3));
 
     let size = 10

@@ -3,8 +3,8 @@ import type { Float } from "@threlte/extras";
 import {writable} from 'svelte/store';
 
 const a1mat: Float32Array = new Float32Array([0.16, 0, 0, 0,
-    0, 0.16, 0, 0,
-    0, 0, 0.16, 0])
+    0, 0.3, -0.75, 0,
+    0, 0, 0.16, 0.5])
 const a2mat = new Float32Array([0.85, 0.04, 0.04, 0,
     -0.04, 0.8, 0.03, 1,
     -0.04, -0.05, 0.85, 0])
@@ -12,7 +12,7 @@ const a3mat = new Float32Array([0.20, -0.2, -0.4, 0,
     0.23, 0.22, -0.26, 1.6,
     0.23, 0.23, 0.24, 0])
 const a4mat = new Float32Array([-0.15, 0.28, 0.28, 0,
-    0.2, 0.24, 0.28, 0.45,
+    -0.75, 0.24, 0.28, 0.45,
     0.26, 0.26, 0.39, 0])
 
 let initial_transformations = new Map<number, Float32Array>();
