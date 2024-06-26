@@ -22,6 +22,7 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
 <div class="split-pane" on:mousemove={drag} on:mouseup={dragend}>
 	<div bind:this={left} class="left" style="flex-basis: {leftInitialSize}">
 		<slot name="left" />
@@ -46,6 +47,7 @@
 		align-items: stretch;
 		width: 100%;
 		max-width: 100%;
+        
 	}
 
 	.split-pane > div {
@@ -53,13 +55,12 @@
 	}
 
 	.left {
-		flex-grow: 0;
+		flex-grow: 1;
 		flex-shrink: 0;
 	}
 
 	.right {
-		flex-grow: 1;
-		flex-shrink: 0;
-		overflow-x: visible;
+		flex-grow: 0;
+		flex-shrink: 1;
 	}
 </style>

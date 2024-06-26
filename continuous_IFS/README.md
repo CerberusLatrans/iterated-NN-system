@@ -1,0 +1,1 @@
+Idea: 1 random input to one affine transformation (6d tensor output)

@@ -6,16 +6,17 @@
     import Scene from './Scene.svelte';
     import ControlPanel from './AffinePanel.svelte';
     
+    const n = 100_000
     $: affineTransforms = Array.from($transformations.values()).map((t) => AffineTransformation.new(t))
     $: ifs = IteratedFunctionSystem.new(affineTransforms);
+    $: pointsPtr = ifs.generate(n);
 </script>
-
 
 <main>
     <SplitPane>
         <svelte:fragment slot="left">
             <Canvas size={{width:500,height:700}}>
-                <Scene {ifs}/>
+                <Scene {pointsPtr} {n}/>
             </Canvas>
         </svelte:fragment>
         <svelte:fragment slot="right">

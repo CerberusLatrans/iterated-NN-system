@@ -7,12 +7,15 @@
     import AffineVisual from './AffineVisual.svelte';
     import { transformations } from './stores';
     
-    export let ifs;
+    //export let ifs;
+    //$: ifs, console.log('IFS');
+    //const n = 10_000;
+    //$: pointsPtr = ifs.generate(n);
+    //$: pointsPtr, console.log('POINTS', pointsPtr);
 
-    let n = 100_000;
-    $: pointsPtr = ifs.generate(n);
-    $: points = new Float32Array(memory.buffer, pointsPtr, n*3);
-    
+    export let pointsPtr;
+    export let n;
+    $: points = new Float32Array(memory.buffer, pointsPtr, n*3)
     $: pointCloud = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3));
 
     let size = 10
@@ -28,7 +31,7 @@
 
 <T.PerspectiveCamera
   makeDefault
-  position={[25, 25, 25]}
+  position={[50, 50, 50]}
   fov={15}
 >
 <OrbitControls/>

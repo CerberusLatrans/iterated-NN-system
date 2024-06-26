@@ -37,6 +37,14 @@
         let val = sign*Math.random()*n
         return val
     }
+
+    function determinant(matrix) {
+        let [a,b,c,d,e,f,g,h,i] =[
+        matrix[0], matrix[1], matrix[2],
+        matrix[4], matrix[5], matrix[6],
+        matrix[8], matrix[9], matrix[10]]
+        return a*e*i + b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
+    }
 </script>
 
 <div
@@ -45,7 +53,7 @@ style:width="50%">
         Add Transformation
     </button>
     {#each $transformations as [id, matrix] (id)}
-        <p>Transformation {id}</p>
+        <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
         <MatrixEditor bind:matrix={matrix}></MatrixEditor>
         <button on:click={() => {noise(id)}}>
             Noise
