@@ -1,7 +1,6 @@
 <script lang='ts'>
     import { transformations } from './stores';
     import MatrixEditor from './MatrixEditor.svelte'
-    import { read } from '$app/server';
 
     function addTransformation() {
         let id_transform = new Float32Array([
