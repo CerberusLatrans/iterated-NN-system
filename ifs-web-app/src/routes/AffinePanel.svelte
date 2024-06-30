@@ -33,18 +33,18 @@
     }
 
     function importIFS(e: Event) {
-        function parseJSON(json) {
+        function parseJSON(json: JSON) {
             let importedIFS = new Map()
             const jsonMap = new Map(Object.entries(json))
             jsonMap.forEach(
-                (value, key) => {
+                (value: JSON, key) => {
                     let affine = new Map(Object.entries(value)).values()
                     importedIFS.set(parseInt(key), new Float32Array([...affine]))
                 }
             )
             $transformations = importedIFS
         }
-        const file = e.target.files[0]
+        let file = (e.target as HTMLInputElement).files![0]
         new Response(file).json().then(parseJSON)
     }
 
