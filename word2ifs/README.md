@@ -7,7 +7,7 @@ An IFS with degree (# affine transforms) 4 will have
 Want to avoid:
 IFS that are not contractive on average
 Affine transforms with too little variance (good objects have a lot of 0s)
-
+Determinant>1
 Once we have sampled an adequete number of IFS, iterate each one and classify using PointNet.
 If there is high confidence, we know that the object resembles something IRL.
 

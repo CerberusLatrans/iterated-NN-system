@@ -7,9 +7,13 @@
     import ControlPanel from './AffinePanel.svelte';
     
     const n = 100_000
-    $: affineTransforms = Array.from($transformations.values()).map((t) => AffineTransformation.new(t))
-    $: ifs = IteratedFunctionSystem.new(affineTransforms);
-    $: pointsPtr = ifs.generate(n);
+    //$: affineTransforms = Array.from($transformations.values()).map((t) => AffineTransformation.new(t))
+    //$: ifs = IteratedFunctionSystem.new(affineTransforms);
+    //$: pointsPtr = ifs.generate(n);
+    $: pointsPtr = IteratedFunctionSystem.new(
+        Array.from($transformations.values())
+        .map((t) => AffineTransformation.new(t)))
+        .generate(n)
 </script>
 
 <main>

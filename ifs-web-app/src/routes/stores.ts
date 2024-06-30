@@ -1,6 +1,7 @@
 import {AffineTransformation, IteratedFunctionSystem} from "../lib/pkg/iterator";
 import type { Float } from "@threlte/extras";
 import {writable} from 'svelte/store';
+import { onMount } from 'svelte';
 
 const a1mat: Float32Array = new Float32Array([0.16, 0, 0, 0,
     0, 0.3, -0.75, 0,
