@@ -50,7 +50,7 @@
 
 
     let id_material = new THREE.LineBasicMaterial( {
-        color: 'green',
+        color: 'black',
         linewidth: 100*F,
         linecap: 'round', //ignored by WebGLRenderer
         linejoin:  'round' //ignored by WebGLRenderer
@@ -73,9 +73,9 @@
 
 <T.Mesh>
     <T is={id_segments}/>
-    <T.MeshBasicMaterial color="red" />
+    <T.MeshBasicMaterial/>
 </T.Mesh>
 <T.Points>
     <T is={id_vertices} />
-    <T.PointsMaterial size={F/2} color='green'/>
+    <T.PointsMaterial size={F/2} color='black'/>
 </T.Points>

@@ -14,9 +14,13 @@
     //$: pointsPtr, console.log('POINTS', pointsPtr);
 
     export let pointsPtr;
+    export let colorsPtr;
     export let n;
     $: points = new Float32Array(memory.buffer, pointsPtr, n*3)
-    $: pointCloud = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3));
+    $: colors = new Float32Array(memory.buffer, colorsPtr, n*3)
+    $: pointCloud = new THREE.BufferGeometry()
+        .setAttribute('position', new THREE.BufferAttribute(points, 3))
+        .setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     let size = 10
     let divisions = 5
@@ -44,7 +48,7 @@
 <Align>
     <T.Points>
       <T is={pointCloud} />
-      <T.PointsMaterial size={0.25} color='black'/>
+      <T.PointsMaterial size={0.25} vertexColors={true}/>
     </T.Points>
     
     <!--

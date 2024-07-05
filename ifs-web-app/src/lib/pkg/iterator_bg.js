@@ -90,6 +90,13 @@ function passArrayJsValueToWasm0(array, malloc) {
     return ptr;
 }
 
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+    return instance.ptr;
+}
+
 function handleError(f, args) {
     try {
         return f.apply(this, args);
@@ -98,45 +105,75 @@ function handleError(f, args) {
     }
 }
 
+const lTextEncoder = typeof TextEncoder === 'undefined' ? (0, module.require)('util').TextEncoder : TextEncoder;
+
+let cachedTextEncoder = new lTextEncoder('utf-8');
+
+const encodeString = (typeof cachedTextEncoder.encodeInto === 'function'
+    ? function (arg, view) {
+    return cachedTextEncoder.encodeInto(arg, view);
+}
+    : function (arg, view) {
+    const buf = cachedTextEncoder.encode(arg);
+    view.set(buf);
+    return {
+        read: arg.length,
+        written: buf.length
+    };
+});
+
+function passStringToWasm0(arg, malloc, realloc) {
+
+    if (realloc === undefined) {
+        const buf = cachedTextEncoder.encode(arg);
+        const ptr = malloc(buf.length, 1) >>> 0;
+        getUint8Memory0().subarray(ptr, ptr + buf.length).set(buf);
+        WASM_VECTOR_LEN = buf.length;
+        return ptr;
+    }
+
+    let len = arg.length;
+    let ptr = malloc(len, 1) >>> 0;
+
+    const mem = getUint8Memory0();
+
+    let offset = 0;
+
+    for (; offset < len; offset++) {
+        const code = arg.charCodeAt(offset);
+        if (code > 0x7F) break;
+        mem[ptr + offset] = code;
+    }
+
+    if (offset !== len) {
+        if (offset !== 0) {
+            arg = arg.slice(offset);
+        }
+        ptr = realloc(ptr, len, len = offset + arg.length * 3, 1) >>> 0;
+        const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
+        const ret = encodeString(arg, view);
+
+        offset += ret.written;
+        ptr = realloc(ptr, len, offset, 1) >>> 0;
+    }
+
+    WASM_VECTOR_LEN = offset;
+    return ptr;
+}
+
+let cachedInt32Memory0 = null;
+
+function getInt32Memory0() {
+    if (cachedInt32Memory0 === null || cachedInt32Memory0.byteLength === 0) {
+        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachedInt32Memory0;
+}
+
 const AffineTransformationFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_affinetransformation_free(ptr >>> 0));
 /**
-*#[wasm_bindgen]
-*pub struct MarkovChain {
-*    chain: Vec<WeightedIndex<f32>>,
-*    rng: ThreadRng,
-*    idx: usize,
-*}
-*
-*#[wasm_bindgen]
-*impl MarkovChain {
-*    pub fn new(matrix: Vec<Vec<f32>>) -> MarkovChain {
-*        let mut rng = rand::thread_rng();
-*        let uni = Uniform::new(0, matrix.len());
-*        let idx = rng.sample(uni);
-*
-*        let chain = matrix.iter().map(
-*            |dist| WeightedIndex::new(dist).unwrap()).collect();
-*        MarkovChain {
-*            chain,
-*            rng,
-*            idx,
-*        }
-*    }
-*    pub fn from_probabilities(probabilities: Vec<f32>) -> MarkovChain {
-*        Self::new((0..probabilities.len()).into_iter().map(|_| probabilities.clone()).collect())
-*    }
-*}
-*impl Iterator for MarkovChain {
-*    type Item = usize;
-*    fn next(&mut self) -> Option<Self::Item> {
-*        let dist = &self.chain[self.idx];
-*        let new_idx = self.rng.sample(&dist);
-*        self.idx = new_idx;
-*        Some(new_idx)
-*    }
-*}
 * A single affine transformation in 3D space
 */
 export class AffineTransformation {
@@ -169,16 +206,6 @@ export class AffineTransformation {
     }
     /**
     * Create a new affine transformation from matrix components
-    *pub fn new(a: f32, b: f32, c: f32, d: f32,
-    *       e: f32, f: f32, g: f32, h: f32,
-    *       i: f32, j: f32, k: f32, l: f32) -> Self {
-    *    AffineTransformation {
-    *        matrix: Matrix4::new(a, b, c, d,
-    *                             e, f, g, h,
-    *                             i, j, k, l,
-    *                             0.0, 0.0, 0.0, 1.0),
-    *    }
-    *}
     * @param {Float32Array} x
     * @returns {AffineTransformation}
     */
@@ -218,6 +245,11 @@ export class IteratedFunctionSystem {
         wasm.__wbg_iteratedfunctionsystem_free(ptr);
     }
     /**
+    */
+    static init() {
+        wasm.iteratedfunctionsystem_init();
+    }
+    /**
     * Create a new IFS with the given transformations
     * @param {(AffineTransformation)[]} transformations
     * @returns {IteratedFunctionSystem}
@@ -229,19 +261,153 @@ export class IteratedFunctionSystem {
         return IteratedFunctionSystem.__wrap(ret);
     }
     /**
+    * @param {(AffineTransformation)[]} transformations
+    * @param {Float32Array} probabilities
+    * @returns {IteratedFunctionSystem}
+    */
+    static new_from_probabilities(transformations, probabilities) {
+        const ptr0 = passArrayJsValueToWasm0(transformations, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayF32ToWasm0(probabilities, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.iteratedfunctionsystem_new_from_probabilities(ptr0, len0, ptr1, len1);
+        return IteratedFunctionSystem.__wrap(ret);
+    }
+    /**
+    * @param {(AffineTransformation)[]} transformations
+    * @param {MarkovChain} chain
+    * @returns {IteratedFunctionSystem}
+    */
+    static new_from_markov(transformations, chain) {
+        const ptr0 = passArrayJsValueToWasm0(transformations, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        _assertClass(chain, MarkovChain);
+        var ptr1 = chain.__destroy_into_raw();
+        const ret = wasm.iteratedfunctionsystem_new_from_markov(ptr0, len0, ptr1);
+        return IteratedFunctionSystem.__wrap(ret);
+    }
+    /**
     * Generate points using the IFS
     * @param {number} num_points
-    * @returns {number}
+    * @returns {PtrTuple}
     */
     generate(num_points) {
         const ret = wasm.iteratedfunctionsystem_generate(this.__wbg_ptr, num_points);
+        return PtrTuple.__wrap(ret);
+    }
+}
+
+const MarkovChainFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_markovchain_free(ptr >>> 0));
+/**
+*/
+export class MarkovChain {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(MarkovChain.prototype);
+        obj.__wbg_ptr = ptr;
+        MarkovChainFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        MarkovChainFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_markovchain_free(ptr);
+    }
+    /**
+    * @param {Float32Array} flat_matrix
+    * @param {number} n
+    * @returns {MarkovChain}
+    */
+    static new(flat_matrix, n) {
+        const ptr0 = passArrayF32ToWasm0(flat_matrix, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.markovchain_new(ptr0, len0, n);
+        return MarkovChain.__wrap(ret);
+    }
+    /**
+    * @param {Float32Array} probabilities
+    * @returns {MarkovChain}
+    */
+    static from_probabilities(probabilities) {
+        const ptr0 = passArrayF32ToWasm0(probabilities, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.markovchain_from_probabilities(ptr0, len0);
+        return MarkovChain.__wrap(ret);
+    }
+}
+
+const PtrTupleFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_ptrtuple_free(ptr >>> 0));
+/**
+* Pointer Tuple class (to export to JS frontend)
+*/
+export class PtrTuple {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(PtrTuple.prototype);
+        obj.__wbg_ptr = ptr;
+        PtrTupleFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        PtrTupleFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_ptrtuple_free(ptr);
+    }
+    /**
+    * @returns {number}
+    */
+    get points_ptr() {
+        const ret = wasm.__wbg_get_ptrtuple_points_ptr(this.__wbg_ptr);
         return ret >>> 0;
+    }
+    /**
+    * @param {number} arg0
+    */
+    set points_ptr(arg0) {
+        wasm.__wbg_set_ptrtuple_points_ptr(this.__wbg_ptr, arg0);
+    }
+    /**
+    * @returns {number}
+    */
+    get colors_ptr() {
+        const ret = wasm.__wbg_get_ptrtuple_colors_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} arg0
+    */
+    set colors_ptr(arg0) {
+        wasm.__wbg_set_ptrtuple_colors_ptr(this.__wbg_ptr, arg0);
     }
 }
 
 export function __wbg_affinetransformation_unwrap(arg0) {
     const ret = AffineTransformation.__unwrap(takeObject(arg0));
     return ret;
+};
+
+export function __wbindgen_object_drop_ref(arg0) {
+    takeObject(arg0);
 };
 
 export function __wbg_crypto_1d1f22824a6a080c(arg0) {
@@ -273,10 +439,6 @@ export function __wbg_node_104a2ff8d6ea03a2(arg0) {
 export function __wbindgen_is_string(arg0) {
     const ret = typeof(getObject(arg0)) === 'string';
     return ret;
-};
-
-export function __wbindgen_object_drop_ref(arg0) {
-    takeObject(arg0);
 };
 
 export function __wbg_require_cca90b1a94a0255b() { return handleError(function () {
@@ -379,6 +541,31 @@ export function __wbg_newwithlength_e9b4878cebadb3d3(arg0) {
 export function __wbg_subarray_a1f73cd4b5b42fe1(arg0, arg1, arg2) {
     const ret = getObject(arg0).subarray(arg1 >>> 0, arg2 >>> 0);
     return addHeapObject(ret);
+};
+
+export function __wbg_new_abda76e883ba8a5f() {
+    const ret = new Error();
+    return addHeapObject(ret);
+};
+
+export function __wbg_stack_658279fe44541cf6(arg0, arg1) {
+    const ret = getObject(arg1).stack;
+    const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    getInt32Memory0()[arg0 / 4 + 1] = len1;
+    getInt32Memory0()[arg0 / 4 + 0] = ptr1;
+};
+
+export function __wbg_error_f851667af71bcfc6(arg0, arg1) {
+    let deferred0_0;
+    let deferred0_1;
+    try {
+        deferred0_0 = arg0;
+        deferred0_1 = arg1;
+        console.error(getStringFromWasm0(arg0, arg1));
+    } finally {
+        wasm.__wbindgen_free(deferred0_0, deferred0_1, 1);
+    }
 };
 
 export function __wbindgen_throw(arg0, arg1) {

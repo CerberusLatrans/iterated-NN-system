@@ -31,3 +31,8 @@ Prediction:
 
 Potential issue: will have multiple different IFS labels for the same word.
 Hopefully it learns to generate the average IFS of these labels.
+
+Problem: PointNet only has 40 classes.
+Idea: use 2d classification model and feed it multiple projections of the same 3d figure
+
+Maybe

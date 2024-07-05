@@ -81,6 +81,20 @@
 
     function randomIFS() {
         $transformations.forEach((v, k) => {
+            let a = 0.7
+            let b = 1.7
+            let randomAffine = new Float32Array(
+            [randn(a), randn(a), randn(a), randn(a),
+            randn(a), randn(a), randn(a), randn(b),
+            randn(a), randn(a), randn(a), randn(b)]
+        )
+            $transformations.set(k, randomAffine)
+            $transformations = $transformations
+        })
+    }
+
+    function randomIFS2() {
+        $transformations.forEach((v, k) => {
             let a = [-0.75, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75]
             let b = [-1.5, -1.25, -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]
             let randomAffine = new Float32Array([
