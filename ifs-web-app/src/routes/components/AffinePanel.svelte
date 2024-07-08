@@ -1,5 +1,5 @@
 <script lang='ts'>
-    import { transformations } from './stores';
+    import { transformations } from '../stores';
     import MatrixEditor from './MatrixEditor.svelte'
 
     function addTransformation() {

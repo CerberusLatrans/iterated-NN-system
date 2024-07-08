@@ -12,9 +12,9 @@
 		"@fontsource/fira-mono": "^4.5.10",
 		"@neoconfetti/svelte": "^1.0.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
-        "@sveltejs/adapter-vercel": "^5.3.2",
+		"@sveltejs/adapter-vercel": "^5.3.2",
+		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
-        "@sveltejs/kit": "^2.0.0",
 		"@threlte/core": "^7.3.0",
 		"@types/three": "^0.165.0",
 		"@wasm-tool/rollup-plugin-rust": "^2.4.5",
@@ -29,7 +29,10 @@
 	},
 	"dependencies": {
 		"@rollup/plugin-virtual": "^3.0.2",
-		"@threlte/extras": "^8.11.3"
+		"@threlte/extras": "^8.11.3",
+		"@xenova/transformers": "^2.17.2",
+		"onnxjs": "^0.1.8",
+		"onnxruntime-web": "^1.19.0-dev.20240704-07c429191e"
 	},
 	"type": "module"
 }

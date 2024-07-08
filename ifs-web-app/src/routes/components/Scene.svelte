@@ -1,11 +1,11 @@
 <script>
-    import {memory} from "../lib/pkg/iterator_bg.wasm";
+    import {memory} from "../../lib/pkg/iterator_bg.wasm";
     import * as THREE from 'three';
     import { T } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
-    import {AffineTransformation, IteratedFunctionSystem} from "../lib/pkg/iterator";
+    import {AffineTransformation, IteratedFunctionSystem} from "../../lib/pkg/iterator";
     import AffineVisual from './AffineVisual.svelte';
-    import { transformations } from './stores';
+    import { transformations } from '../stores';
     
     //export let ifs;
     //$: ifs, console.log('IFS');
