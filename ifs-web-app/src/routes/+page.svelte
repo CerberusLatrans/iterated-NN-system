@@ -5,7 +5,7 @@
     import SplitPane from './components/SplitPane.svelte';
     import Scene from './components/Scene.svelte';
     import ControlPanel from './components/AffinePanel.svelte';
-    import { runInference } from "./inference";
+    import { runInference, ifsFromArray } from "./inference";
     
     const n = 10_000
     IteratedFunctionSystem.init();
@@ -15,8 +15,8 @@
 
     const inferIFS = async (e: Event) => {
         let text = (e.target as HTMLInputElement).value
-        let prediction = await runInference(text);
-        //$transformations = toMap(prediction);
+        let prediction: Float32Array = await runInference(text);
+        $transformations = ifsFromArray(prediction);
     }
     
     $: ptrTuple = IteratedFunctionSystem.new(
@@ -30,7 +30,10 @@
             <Canvas size={{width:500,height:700}}>
                 <Scene pointsPtr={ptrTuple.points_ptr} colorsPtr={ptrTuple.colors_ptr} {n}/>
             </Canvas>
-            <input type="text" on:input={inferIFS}/>
+            <input
+            style:width='80%'
+            style:height='5%'
+            type="text" on:input={inferIFS}/>
         </svelte:fragment>
         <svelte:fragment slot="right">
             <ControlPanel></ControlPanel>

@@ -1,54 +1,87 @@
-import { Tensor, InferenceSession } from "onnxruntime-web";
-import * as ort from "onnxruntime-web/webgpu";
-import { pipeline, AutoModelForSeq2SeqLM, AutoTokenizer, Seq2SeqLMOutput } from '@xenova/transformers';
+import { Tensor, InferenceSession } from "onnxruntime-web";//webgpu
+import * as ort from "onnxruntime-web";
+import { pipeline, AutoModelForSeq2SeqLM, AutoTokenizer, Seq2SeqLMOutput} from '@xenova/transformers';
 
-async function runT5(wee: string) {
-    console.log(wee)
-    const t5Model = 'Xenova/t5-small';
-    let tokenizer = await AutoTokenizer.from_pretrained(t5Model);
+const t5Model = 'Xenova/t5-small';
+let tokenizer = await AutoTokenizer.from_pretrained(t5Model);
+const t5Path = "./models/t5_encoder_model_quantized.onnx"
+const ifsNetPath = "../models/ifsnet.onnx"
+const device = ort.env.webgpu.device;
+const EMBEDDING_SIZE = 512;
+
+async function runT5EmbeddingHF(wee: string) {
     let model = await AutoModelForSeq2SeqLM.from_pretrained(t5Model);
     let tokens = tokenizer(wee);
-    console.log('TOKENS', tokens)
     let result = await model.generate(tokens['input_ids']);
-    console.log('RESULT', result)
     let output = new Seq2SeqLMOutput(result)
-    console.log(output)
     let embedding = output.encoder_outputs;
-    console.log(embedding)
     let decoded = tokenizer.decode(result[0], { skip_special_tokens: true });
-    console.log("DECODED", decoded)
     return embedding;
   }
 
-async function runT5ONNX(text: string) {
-    const t5Model = 'Xenova/t5-small';
-    let tokenizer = await AutoTokenizer.from_pretrained(t5Model);
-    let tokens: Tensor = tokenizer(text);
+async function runT5Embedding(dataTensor: Tensor, attentionMaskTensor: Tensor) {
+    const session = await InferenceSession.create(t5Path, {
+        executionProviders: ['webgpu', 'wasm'],
+        graphOptimizationLevel: 'all',
+        preferredOutputLocation: 'gpu-buffer'});
 
-    const t5Path = "../models/t5-encoder-12.onnx"
-    const session = await InferenceSession.create(t5Path, { executionProviders: ['webgpu'], graphOptimizationLevel: 'all' });
-    const feeds: Record<string, ort.Tensor> = {};
-    feeds[session.inputNames[0]] = tokens
-    const outputData = await session.run(feeds);
+    const feeds: Record<string, Tensor> = {};
+    //DataLocation: "none" | "cpu" | "cpu-pinned" | "texture" | "gpu-buffer"
+    dataTensor.location = 'cpu'
+    attentionMaskTensor.location = 'cpu'
+    feeds['input_ids'] = dataTensor;
+    feeds['attention_mask'] = attentionMaskTensor;
+
+    //const fetches: Record<string, Tensor> = {};
+    //let gpuBuffer = device.createBuffer({
+    //    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+    //    size: Math.ceil(bufferSize / 16) * 16 /* align to 16 bytes */
+    //});
+    //let gpuTensor = Tensor.fromGpuBuffer(gpuBuffer, { dataType: 'float32', dims: [512})
+    //fetches[session.outputNames[0]] = gpuTensor;
+    const outputData = await session.run(feeds)//, fetches);
     const embedding = outputData[session.outputNames[0]];
     return embedding
 }
-
-//async function runIFSNet(encoding: Tensor) {
-//    const ifsNetPath = "../models/t5-encoder-12.onnx"
-//    const session = await InferenceSession.create(t5Path, { executionProviders: ['webGL'], graphOptimizationLevel: 'all' });
-//    const feeds: Record<string, ort.Tensor> = {};
-//    feeds[session.inputNames[0]] = preprocessedData
-//    
-//    const outputData = await session.run({ inputName : text});
-//    const output = outputData[session.outputNames[0]];
-//    return output
-//}
+async function runIFSNet(embedding: Tensor) {
+    const session = await InferenceSession.create(ifsNetPath, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+    const feeds: Record<string, ort.Tensor> = {};
+    feeds[session.inputNames[0]] = embedding
+    const outputData = await session.run(feeds);
+    const ifs = outputData[session.outputNames[0]];
+    return ifs
+}
 
 
 export async function runInference(text: string) {
-    //let encoding = await runT5ONNX(text);
-    let encoding: Tensor = await runT5ONNX(text);
-    //let prediction = await runIFSNet(encoding);
-    return encoding
+    let tokens = tokenizer(text, {"return_tensor":true});
+    let embeddings: Tensor = await runT5Embedding(tokens['input_ids'], tokens['attention_mask']);
+    let n = embeddings.dims[1] // dims = [1, n, 512]
+    //console.log(embeddings, n)
+    let embeddingsArray = await embeddings.getData()
+    let avgEmbedding = new Float32Array(EMBEDDING_SIZE)
+    for (let i=0; i<EMBEDDING_SIZE; i++) {
+        let total = 0
+        for (let j=0; j<n; j++) {
+            total += embeddingsArray[i+(j*EMBEDDING_SIZE)]
+        }
+        avgEmbedding[i] = total / n
+    }
+    console.log('AVG', avgEmbedding)
+    let avgEmbeddingTensor = new Tensor('float32', avgEmbedding, [EMBEDDING_SIZE])
+    console.log(avgEmbeddingTensor)
+    let ifsTensor = await runIFSNet(avgEmbeddingTensor);
+    let ifsArray = ifsTensor.getData()
+    console.log(ifsArray)
+    return ifsArray
+}
+
+export function ifsFromArray(ifsArray: Float32Array) {
+    const affineDim = 12;
+    let ifs = new Map<number, Float32Array>();
+    let arity = Math.floor(ifsArray.length/affineDim)
+    for (let i=0; i<arity; i++) {
+        ifs.set(i, ifsArray.slice((i*affineDim), (i*affineDim)+affineDim))
+    }
+    return ifs
 }
