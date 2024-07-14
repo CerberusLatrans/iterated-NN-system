@@ -1,11 +1,11 @@
 <script>
     import {memory} from "../../lib/pkg/iterator_bg.wasm";
     import * as THREE from 'three';
-    import { T } from '@threlte/core'
+    import { T, useTask } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
     import {AffineTransformation, IteratedFunctionSystem} from "../../lib/pkg/iterator";
     import AffineVisual from './AffineVisual.svelte';
-    import { transformations } from '../stores';
+    import { transformations, showRotation, showColors, showTransforms } from '../stores';
     
     //export let ifs;
     //$: ifs, console.log('IFS');
@@ -17,10 +17,19 @@
     export let colorsPtr;
     export let n;
     $: points = new Float32Array(memory.buffer, pointsPtr, n*3)
-    $: colors = new Float32Array(memory.buffer, colorsPtr, n*3)
-    $: pointCloud = new THREE.BufferGeometry()
-        .setAttribute('position', new THREE.BufferAttribute(points, 3))
-        .setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    $: colors = $showColors ? new Float32Array(memory.buffer, colorsPtr, n*3) : new Float32Array();
+
+    function colorGeometry(geom) {
+        if ($showColors) {
+            return geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        } else {
+            return geom
+        }
+    }
+    
+    $: pointCloud = colorGeometry(new THREE.BufferGeometry()
+        .setAttribute('position', new THREE.BufferAttribute(points, 3)))
+        
 
     let size = 10
     let divisions = 5
@@ -29,6 +38,11 @@
     const zGrid = new THREE.GridHelper(size, divisions)
     xGrid.rotation.x = Math.PI/2
     zGrid.rotation.z = Math.PI/2
+
+    let rotation = 0
+    useTask((delta) => {
+        rotation += delta
+    })
     interactivity()
 </script>
 
@@ -45,7 +59,8 @@
   position.z={10}
 />
 
-<Align>
+<Align
+    rotation.y={$showRotation ? rotation : 0}>
     <T.Points>
       <T is={pointCloud} />
       <T.PointsMaterial size={0.25} vertexColors={true}/>
@@ -56,7 +71,7 @@
     <T is={yGrid} />
     <T is={zGrid} />
     -->
-    
+    {#if $showTransforms}
     {#each $transformations as [id, m]}
         <AffineVisual matrix={
             new THREE.Matrix4(
@@ -66,4 +81,5 @@
             0, 0, 0, 1)
         }></AffineVisual>
     {/each}
+    {/if}
 </Align>

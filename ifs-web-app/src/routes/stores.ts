@@ -23,3 +23,7 @@ initial_transformations.set(2, a3mat);
 initial_transformations.set(3, a4mat);
 
 export const transformations = writable(initial_transformations);
+
+export const showRotation = writable(false);
+export const showColors = writable(false);
+export const showTransforms = writable(false);

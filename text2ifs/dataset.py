@@ -9,12 +9,20 @@ from torch.utils.data import Dataset
 import numpy as np
 
 class IFSDataset(Dataset):
-    def __init__(self, arity, annotations_file, json_dir, embedding_model, ifs_noise_factor=1, text_noise_factor=1):
+    def __init__(self,
+                 arity,
+                 annotations_file,
+                 json_dir,
+                 embedding_model,
+                 scramble_ifs=True,
+                 ifs_noise_factor=1,
+                 text_noise_factor=1):
         self.arity = arity
         self.annotations = pd.read_csv(annotations_file)
         self.json_dir = json_dir
         self.ifs_noise_factor = ifs_noise_factor
         self.text_noise_factor = text_noise_factor
+        self.scramble_ifs = scramble_ifs
 
         self.tok = T5Tokenizer.from_pretrained(embedding_model)
         self.enc = T5EncoderModel.from_pretrained(embedding_model)
@@ -24,7 +32,7 @@ class IFSDataset(Dataset):
         self.df["embeddings"] = self.df["desc"].apply(self._encode_text)
         self.df["ifs"] = self.df["file"].apply(self._fetch_ifs)
 
-        print(self.df.to_string())
+        #print(self.df.to_string())
     
     def __len__(self):
         return len(self.annotations)#*self.ifs_noise_factor*self.text_noise_factor
@@ -48,7 +56,10 @@ class IFSDataset(Dataset):
             for _ in range(self.arity-len(ifs_mat)):
                 ifs_mat.append(id)
 
-        return np.array(ifs_mat).flatten()
+        if self.scramble_ifs:
+            return np.random.permutation(np.array(ifs_mat)).flatten()
+        else:
+            return np.array(ifs_mat).flatten()
 
     def _encode_text(self, text):
         tokenized = self.tok(text, return_tensors="pt")

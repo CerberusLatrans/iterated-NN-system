@@ -142,7 +142,7 @@ impl IteratedFunctionSystem {
     }
 
     /// Generate points using the IFS
-    pub fn generate(&mut self, num_points: usize) -> PtrTuple {
+    pub fn generate_colors(&mut self, num_points: usize) -> PtrTuple {
         let mut points = Vec::with_capacity(num_points);
         let mut point = Vector4::new(0.0, 0.0, 0.0, 1.0);
         let mut colors = Vec::with_capacity(num_points);
@@ -161,5 +161,20 @@ impl IteratedFunctionSystem {
 
         PtrTuple {points_ptr: points.as_ptr(), colors_ptr: colors.as_ptr(), color_map: color_map.as_ptr()}
         //points.as_ptr()
+    }
+
+    /// Generate points using the IFS
+    pub fn generate(&mut self, num_points: usize) -> *const Point {
+        let mut points = Vec::with_capacity(num_points);
+        let mut point = Vector4::new(0.0, 0.0, 0.0, 1.0);
+
+        for _ in 0..num_points {
+            let index = self.chain.next().unwrap();
+            let transformation = &self.transformations[index];
+            point = transformation.apply(point);
+            points.push((point.x, point.y, point.z));
+        }
+
+        points.as_ptr()
     }
 }

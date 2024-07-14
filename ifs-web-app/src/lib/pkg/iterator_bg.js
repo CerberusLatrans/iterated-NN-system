@@ -291,9 +291,18 @@ export class IteratedFunctionSystem {
     * @param {number} num_points
     * @returns {PtrTuple}
     */
+    generate_colors(num_points) {
+        const ret = wasm.iteratedfunctionsystem_generate_colors(this.__wbg_ptr, num_points);
+        return PtrTuple.__wrap(ret);
+    }
+    /**
+    * Generate points using the IFS
+    * @param {number} num_points
+    * @returns {number}
+    */
     generate(num_points) {
         const ret = wasm.iteratedfunctionsystem_generate(this.__wbg_ptr, num_points);
-        return PtrTuple.__wrap(ret);
+        return ret >>> 0;
     }
 }
 
@@ -398,6 +407,19 @@ export class PtrTuple {
     */
     set colors_ptr(arg0) {
         wasm.__wbg_set_ptrtuple_colors_ptr(this.__wbg_ptr, arg0);
+    }
+    /**
+    * @returns {number}
+    */
+    get color_map() {
+        const ret = wasm.__wbg_get_ptrtuple_color_map(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} arg0
+    */
+    set color_map(arg0) {
+        wasm.__wbg_set_ptrtuple_color_map(this.__wbg_ptr, arg0);
     }
 }
 

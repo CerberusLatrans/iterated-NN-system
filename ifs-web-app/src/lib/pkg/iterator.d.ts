@@ -43,7 +43,13 @@ export class IteratedFunctionSystem {
 * @param {number} num_points
 * @returns {PtrTuple}
 */
-  generate(num_points: number): PtrTuple;
+  generate_colors(num_points: number): PtrTuple;
+/**
+* Generate points using the IFS
+* @param {number} num_points
+* @returns {number}
+*/
+  generate(num_points: number): number;
 }
 /**
 */
@@ -66,6 +72,9 @@ export class MarkovChain {
 */
 export class PtrTuple {
   free(): void;
+/**
+*/
+  color_map: number;
 /**
 */
   colors_ptr: number;

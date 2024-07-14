@@ -21,8 +21,6 @@ optimizer = torch.optim.Adam(model.parameters(), lr = LR, weight_decay = weight_
 
 EPOCHS = 100
 SAVE = True
-PATH = "weights/arity={}_ep={}_LR={}"\
-.format(ARITY, EPOCHS, LR)
 
 """
 DATALOADER
@@ -31,9 +29,17 @@ DATALOADER
 ANNOTATION_FILE = "test_annotations.csv"
 JSON_DIR = "ifs_data"
 EMBEDDING_MODEL = "t5-small"
-train_dataset = IFSDataset(arity=ARITY, annotations_file=ANNOTATION_FILE, embedding_model=EMBEDDING_MODEL, json_dir=JSON_DIR)
+SCRAMBLE_IFS = True
+train_dataset = IFSDataset(arity=ARITY,
+                           scramble_ifs=SCRAMBLE_IFS,
+                           annotations_file=ANNOTATION_FILE,
+                           embedding_model=EMBEDDING_MODEL,
+                           json_dir=JSON_DIR)
 BATCH_SIZE = len(train_dataset)
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE)
+
+PATH = "weights/arity={}_ep={}_LR={}_nsamples={}"\
+.format(ARITY, EPOCHS, LR, len(train_dataset))
 
 if __name__ == "__main__":
     losses = []
