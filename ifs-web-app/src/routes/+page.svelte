@@ -6,19 +6,29 @@
     import Scene from './components/Scene.svelte';
     import ControlPanel from './components/AffinePanel.svelte';
     import { runInference, ifsFromArray } from "./inference";
-    import { bool, rotate } from "three/examples/jsm/nodes/Nodes.js";
+    import { bool, rotate, timerDelta } from "three/examples/jsm/nodes/Nodes.js";
+    import { ifsInterpolate } from "./ifsUtils";
     
     const n = 100_000
     IteratedFunctionSystem.init();
+    let prompt = "";
+    const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
     //let mkv = MarkovChain.from_probabilities(new Float32Array([0.01, 0.1, 0.1, 0.7]));
     //let mkv2 = MarkovChain.new(new Float32Array([0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7]), 4)
-
-    const inferIFS = async (e: Event) => {
-        let text = (e.target as HTMLInputElement).value
+    
+    async function inferIFS() {
+        let text = prompt;
         let prediction: Float32Array = await runInference(text);
-        $transformations = ifsFromArray(prediction);
-    }
+        let ifsInterpolation = ifsInterpolate($transformations,ifsFromArray(prediction), undefined,50,0,1);
+        for (let i=0; i<ifsInterpolation.length; i++) {
+            if (i>0) {await delay(50);}
+            
+            $transformations = ifsInterpolation[i];
+        }
+            
+            
+    };
 
     function generate(ifs, n) {
         if ($showColors) {
@@ -59,7 +69,8 @@
             <input
             style:width='80%'
             style:height='5%'
-            type="text" on:input={inferIFS} placeholder="Enter Your Prompt"/>
+            type="search" bind:value={prompt} placeholder="Enter Your Prompt"/>
+            <button on:click={inferIFS}>Submit</button>
         </svelte:fragment>
         <svelte:fragment slot="right">
             <ControlPanel></ControlPanel>

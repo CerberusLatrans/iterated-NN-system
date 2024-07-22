@@ -1,4 +1,4 @@
-import { Tensor, InferenceSession } from "onnxruntime-web";//webgpu
+import { Tensor, InferenceSession } from "onnxruntime-web/webgpu"
 import * as ort from "onnxruntime-web";
 import { pipeline, AutoModelForSeq2SeqLM, AutoTokenizer, Seq2SeqLMOutput} from '@xenova/transformers';
 
@@ -25,7 +25,10 @@ async function runT5Embedding(dataTensor: Tensor, attentionMaskTensor: Tensor) {
     const session = await InferenceSession.create(t5Path, {
         executionProviders: ['webgpu', 'wasm'],
         graphOptimizationLevel: 'all',
-        preferredOutputLocation: 'gpu-buffer'});
+        preferredOutputLocation: 'gpu-buffer',
+        logSeverityLevel: 2,
+        logVerbosityLevel: 0
+    });
 
     const feeds: Record<string, Tensor> = {};
     //DataLocation: "none" | "cpu" | "cpu-pinned" | "texture" | "gpu-buffer"
@@ -48,7 +51,7 @@ async function runT5Embedding(dataTensor: Tensor, attentionMaskTensor: Tensor) {
 }
 async function runIFSNet(embedding: Tensor) {
     const start = new Date();
-    const session = await InferenceSession.create(ifsNetPath, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
+    const session = await InferenceSession.create(ifsNetPath, { executionProviders: ['webgpu'], graphOptimizationLevel: 'all' });
     const feeds: Record<string, ort.Tensor> = {};
     feeds[session.inputNames[0]] = embedding
     const outputData = await session.run(feeds);
@@ -61,6 +64,7 @@ async function runIFSNet(embedding: Tensor) {
 export async function runInference(text: string) {
     const start = new Date();
     let tokens = tokenizer(text, {"return_tensor":true});
+    console.log(text, 'TOKEN TIME: ', (new Date().getTime() - start.getTime())/1000)
     let embeddings: Tensor = await runT5Embedding(tokens['input_ids'], tokens['attention_mask']);
     //let reshaped = embeddings.reshape()
     const avgStart = new Date();
@@ -75,11 +79,11 @@ export async function runInference(text: string) {
         }
         avgEmbedding[i] = total / n
     }
-    let avgEmbeddingTensor = new Tensor('float32', avgEmbedding, [EMBEDDING_SIZE])
-    console.log('AVGING TIME: ', (new Date().getTime() - avgStart.getTime())/1000)
+    let avgEmbeddingTensor = new Tensor('float32', avgEmbedding, [1, EMBEDDING_SIZE])
+    console.log(text, 'AVGING TIME: ', (new Date().getTime() - avgStart.getTime())/1000)
     let ifsTensor = await runIFSNet(avgEmbeddingTensor);
     let ifsArray = ifsTensor.getData()
-    console.log('TOTAL TIME: ', (new Date().getTime() - start.getTime())/1000)
+    console.log(text, 'TOTAL TIME: ', (new Date().getTime() - start.getTime())/1000)
     return ifsArray
 }
 

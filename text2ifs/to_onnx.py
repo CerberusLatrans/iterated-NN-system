@@ -13,7 +13,7 @@ def main():
     torch_model = IFSNet(arity=4)
     torch_model.load_state_dict(torch.load(weight_folder+"/"+weight_path))
     torch_model.eval()
-    dummy_input = torch.zeros(EMB_DIM)
+    dummy_input = torch.zeros(1,EMB_DIM)
     torch.onnx.export(torch_model, dummy_input, web_app_model_path+model_name, verbose=True)
 
 if __name__ == '__main__':
