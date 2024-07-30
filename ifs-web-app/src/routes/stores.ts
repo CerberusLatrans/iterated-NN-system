@@ -24,6 +24,14 @@ initial_transformations.set(3, a4mat);
 
 export const transformations = writable(initial_transformations);
 
+let initial_locks = new Map<number, Set<number>>();
+initial_locks.set(0, new Set());
+initial_locks.set(1, new Set());
+initial_locks.set(2, new Set());
+initial_locks.set(3, new Set());
+export const subLocks = writable(initial_locks);
+export const locks = writable(new Set());
+
 export const showRotation = writable(true);
 export const showColors = writable(false);
 export const showTransforms = writable(true);

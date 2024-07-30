@@ -41,7 +41,7 @@
 
     let rotation = 0
     useTask((delta) => {
-        rotation += delta
+        rotation += delta/2
     })
     interactivity()
 </script>

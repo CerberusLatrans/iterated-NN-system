@@ -110,7 +110,7 @@ export function ifsInterpolate(
         let bAffine = b.get(affineMapping[i][1])!;
         let affineSeries = affineInterpolate(aAffine, bAffine, steps, start, end);
         interpolationSet.push(affineSeries);
-    }
+    } 
 
     for (let t=0; t<steps; t++) {
         let ifs = new Map();
@@ -120,4 +120,15 @@ export function ifsInterpolate(
         ifsSeries.push(ifs)
     }
     return ifsSeries
+}
+
+export function scale(ifs: Map<number, Float32Array>, factor: number) {
+    let scaledIfs = new Map();
+    ifs.forEach((v, k) => {
+        v[3] = v[3]*factor
+        v[7] = v[7]*factor
+        v[11] = v[11]*factor
+        scaledIfs.set(k, v);
+    });
+    return scaledIfs;
 }

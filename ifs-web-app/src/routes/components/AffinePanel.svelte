@@ -1,6 +1,7 @@
 <script lang='ts'>
-    import { transformations } from '../stores';
+    import { transformations, locks, subLocks } from '../stores';
     import MatrixEditor from './MatrixEditor.svelte'
+    import { scale } from '../ifsUtils';
 
     function addTransformation() {
         let id_transform = new Float32Array([
@@ -11,9 +12,11 @@
         let new_id = Math.max(Math.max(...Array.from($transformations.keys()))+1, 0)
         $transformations.set(new_id, id_transform)
         $transformations = $transformations
+        $subLocks.set(new_id, new Set());
     }
 
     let downloadName = 'unnamedIFS.json'
+    let scaleFactor = 1;
 
     function saveIFS(name: string) {
         const jsonString = JSON.stringify(Object.fromEntries($transformations))
@@ -81,30 +84,21 @@
 
     function randomIFS() {
         $transformations.forEach((v, k) => {
-            let a = 0.7
-            let b = 1.7
-            let randomAffine = new Float32Array(
-            [randn(a), randn(a), randn(a), randn(a),
-            randn(a), randn(a), randn(a), randn(b),
-            randn(a), randn(a), randn(a), randn(b)]
-        )
-            $transformations.set(k, randomAffine)
-            $transformations = $transformations
+            if (!$locks.has(k)) {
+                let a = 0.7
+                let b = 1.7
+                v.forEach((_,i) => {
+                    if (!$subLocks.get(k)!.has(i)) {
+                        if (i%4===3) {
+                            v[i] = randn(b)
+                        } else {
+                            v[i] = randn(a)
+                        }
+                    }
+                })           
+            }
         })
-    }
-
-    function randomIFS2() {
-        $transformations.forEach((v, k) => {
-            let a = [-0.75, -0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75]
-            let b = [-1.5, -1.25, -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1.25, 1.5]
-            let randomAffine = new Float32Array([
-                choose(a),choose(a),choose(a),choose(b),
-                choose(a),choose(a),choose(a),choose(b),
-                choose(a),choose(a),choose(a),choose(b)
-            ])
-            $transformations.set(k, randomAffine)
-            $transformations = $transformations
-        })
+        $transformations = $transformations
     }
 
     function choose(choices: number[]) {
@@ -120,9 +114,14 @@ style:width="50%">
     <button on:click={() => {saveIFS(downloadName)}}>Download</button>
     <input bind:value={downloadName} />
     <input accept="application/json" type="file" on:change={importIFS}/>
+    <input type="number" bind:value={scaleFactor} step=0.1/>
+    <button on:click={()=>{$transformations = scale($transformations, scaleFactor)}}>Scale</button>
     {#each $transformations as [id, matrix] (id)}
         <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
-        <MatrixEditor bind:matrix={matrix}></MatrixEditor>
+        <input type="checkbox" id="lock" on:change={
+        ()=>$locks.has(id) ? $locks.delete(id) : $locks.add(id)}>
+        <label for="lock">Lock</label>
+        <MatrixEditor bind:matrix={matrix} {id}></MatrixEditor>
         <button on:click={() => {noise(id)}}>
             Noise
         </button>
