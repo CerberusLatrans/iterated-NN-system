@@ -16,11 +16,17 @@ const a4mat = new Float32Array([-0.15, 0.28, 0.28, 0,
     -0.75, 0.24, 0.28, 0.45,
     0.26, 0.26, 0.39, 0])
 
+const idMat = new Float32Array(
+    [1,0,0,0,
+     0,1,0,0,
+     0,0,1,0
+    ])
+
 let initial_transformations = new Map<number, Float32Array>();
-initial_transformations.set(0, a1mat);
-initial_transformations.set(1, a2mat);
-initial_transformations.set(2, a3mat);
-initial_transformations.set(3, a4mat);
+initial_transformations.set(0, idMat);
+initial_transformations.set(1, idMat);
+initial_transformations.set(2, idMat);
+initial_transformations.set(3, idMat);
 
 export const transformations = writable(initial_transformations);
 

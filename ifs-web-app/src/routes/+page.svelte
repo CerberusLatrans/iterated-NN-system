@@ -12,9 +12,8 @@
     
     let n = 100_000
     IteratedFunctionSystem.init();
-    let prompt = "";
+    let prompt = "Barnsley leafy fern";
     const delay = (ms) => new Promise(res => setTimeout(res, ms));
-    let loadingT5 = true;
     //let mkv = MarkovChain.from_probabilities(new Float32Array([0.01, 0.1, 0.1, 0.7]));
     //let mkv2 = MarkovChain.new(new Float32Array([0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7]), 4)
     async function inferIFS() {
@@ -72,7 +71,7 @@
             <Canvas size={{width:500,height:700}}>
                 <Scene pointsPtr={ptrTuple.points_ptr} colorsPtr={ptrTuple.colors_ptr} {n}/>
             </Canvas>
-            {#await inferIFS}
+            {#await inferIFS()}
                 <p>loading model...</p>
             {:then x}
                 <p>model loaded</p>

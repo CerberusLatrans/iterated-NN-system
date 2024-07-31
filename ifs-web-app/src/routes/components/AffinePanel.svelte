@@ -119,7 +119,10 @@ style:width="50%">
     {#each $transformations as [id, matrix] (id)}
         <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
         <input type="checkbox" id="lock" on:change={
-        ()=>$locks.has(id) ? $locks.delete(id) : $locks.add(id)}>
+        ()=>{
+            $locks.has(id) ? $locks.delete(id) : $locks.add(id);
+            $locks = $locks;
+            }}>
         <label for="lock">Lock</label>
         <MatrixEditor bind:matrix={matrix} {id}></MatrixEditor>
         <button on:click={() => {noise(id)}}>

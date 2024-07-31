@@ -3,11 +3,14 @@
     import * as THREE from 'three';
     import { T } from '@threlte/core'
     import { Align, OrbitControls, interactivity } from '@threlte/extras'
+    import { locks } from "../stores";
 
     const F = 5;
     const Z = -F;
-    export let matrix
+    export let matrix;
+    export let id;
 
+    $: color = $locks.has(id) ? 'black' : 'red';
     const points = new Float32Array([
         Z,Z,Z, F,Z,Z, Z,F,Z, Z,Z,F,
         F,F,Z, F,Z,F, Z,F,F, F,F,F
@@ -40,8 +43,8 @@
     $: edgesGeometry = new THREE.BufferGeometry().setAttribute(
         'position', new THREE.BufferAttribute(edges.slice(0), 3)).applyMatrix4(matrix);
 
-    let material = new THREE.LineBasicMaterial( {
-        color: 'red',
+    $: material = new THREE.LineBasicMaterial( {
+        color: color,
         linewidth: 100*F,
         linecap: 'round', //ignored by WebGLRenderer
         linejoin:  'round' //ignored by WebGLRenderer
@@ -64,16 +67,16 @@
 
 <T.Mesh>
     <T is={segments}/>
-    <T.MeshBasicMaterial color="red" />
+    <T.MeshBasicMaterial color={color}/>
 </T.Mesh>
 <T.Points>
     <T is={vertices} />
-    <T.PointsMaterial size={F/4} color='red'/>
+    <T.PointsMaterial size={F/4} color={color}/>
 </T.Points>
 
 <T.Mesh>
     <T is={id_segments}/>
-    <T.MeshBasicMaterial/>
+    <T.MeshBasicMaterial color='black'/>
 </T.Mesh>
 <T.Points>
     <T is={id_vertices} />
