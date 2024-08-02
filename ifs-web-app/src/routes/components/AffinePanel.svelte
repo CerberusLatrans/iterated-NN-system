@@ -1,7 +1,13 @@
 <script lang='ts'>
     import { transformations, locks, subLocks } from '../stores';
     import MatrixEditor from './MatrixEditor.svelte'
-    import { scale } from '../ifsUtils';
+    import { scaleObject, rotateIFS } from '../ifsUtils';
+
+    let downloadName = 'unnamedIFS.json'
+    let scaleFactor = 1;
+    let rotX = 0;
+    let rotY = 0;
+    let rotZ = 0;
 
     function addTransformation() {
         let id_transform = new Float32Array([
@@ -14,9 +20,6 @@
         $transformations = $transformations
         $subLocks.set(new_id, new Set());
     }
-
-    let downloadName = 'unnamedIFS.json'
-    let scaleFactor = 1;
 
     function saveIFS(name: string) {
         const jsonString = JSON.stringify(Object.fromEntries($transformations))
@@ -105,6 +108,17 @@
         var index = Math.floor(Math.random() * choices.length);
         return choices[index];
     }
+
+    const degToRad = (x: number) => x*(Math.PI/180);
+    const rotate = ()=>{
+        const rot = rotateIFS;
+        // $transformations = rot(rot(rot(
+        //     $transformations, degToRad(rotX), "x"),
+        //     degToRad(rotY), "y"),
+        //     degToRad(rotZ), "z")}
+        $transformations = rot($transformations, degToRad(rotZ), "z");
+        console.log(rotZ, $transformations)
+        }
 </script>
 
 <div
@@ -115,7 +129,12 @@ style:width="50%">
     <input bind:value={downloadName} />
     <input accept="application/json" type="file" on:change={importIFS}/>
     <input type="number" bind:value={scaleFactor} step=0.1/>
-    <button on:click={()=>{$transformations = scale($transformations, scaleFactor)}}>Scale</button>
+    <button on:click={()=>{$transformations = scaleObject($transformations, scaleFactor)}}>
+        Scale</button>
+    <input type="number" bind:value={rotX} step=10/>
+    <input type="number" bind:value={rotY} step=10/>
+    <input type="number" bind:value={rotZ} step=10/>
+    <button on:click={rotate}>RotateXYZ</button>
     {#each $transformations as [id, matrix] (id)}
         <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
         <input type="checkbox" id="lock" on:change={

@@ -1,7 +1,7 @@
 <script lang='ts'>
     import {AffineTransformation, IteratedFunctionSystem, MarkovChain} from "../lib/pkg/iterator";
     import { Canvas } from '@threlte/core';
-    import { transformations, showRotation, showColors, showTransforms } from './stores';
+    import { transformations, showRotation, showColors, showTransforms, displayWidth } from './stores';
     import SplitPane from './components/SplitPane.svelte';
     import Scene from './components/Scene.svelte';
     import ControlPanel from './components/AffinePanel.svelte';
@@ -52,7 +52,7 @@
                 Show IFS Affine Transforms
             </label>
             <label>
-                <input type="checkbox" bind:checked={$showColors}>
+                <input type="checkbox" bind:checked={$showColors} on:change={()=>{$transformations=$transformations}}>
                 Show IFS Colors (may freeze)
             </label>
             <label>
@@ -68,7 +68,7 @@
                     step=1/>
                 points
             </label>
-            <Canvas size={{width:500,height:700}}>
+            <Canvas size={{width: $displayWidth/2, height:1000}}>
                 <Scene pointsPtr={ptrTuple.points_ptr} colorsPtr={ptrTuple.colors_ptr} {n}/>
             </Canvas>
             {#await inferIFS()}

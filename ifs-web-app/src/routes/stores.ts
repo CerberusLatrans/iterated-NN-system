@@ -41,3 +41,4 @@ export const locks = writable(new Set());
 export const showRotation = writable(true);
 export const showColors = writable(false);
 export const showTransforms = writable(true);
+export const displayWidth = writable(0);

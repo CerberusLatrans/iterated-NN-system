@@ -1,4 +1,5 @@
 <script lang=ts>
+    import { displayWidth } from "../stores";
 	export let leftInitialSize = '50%';
 
 	let left: HTMLElement;
@@ -20,10 +21,11 @@
 
 		isDragging = false;
 	}
+    $: console.log($displayWidth)
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="split-pane" on:mousemove={drag} on:mouseup={dragend}>
+<div class="split-pane" on:mousemove={drag} on:mouseup={dragend} bind:clientWidth={$displayWidth}>
 	<div bind:this={left} class="left" style="flex-basis: {leftInitialSize}">
 		<slot name="left" />
 	</div>
@@ -46,8 +48,7 @@
 		display: flex;
 		align-items: stretch;
 		width: 100%;
-		max-width: 100%;
-        
+        max-height: 80vh;
 	}
 
 	.split-pane > div {
@@ -55,12 +56,13 @@
 	}
 
 	.left {
-		flex-grow: 1;
+		flex-grow: 0;
 		flex-shrink: 0;
 	}
 
 	.right {
-		flex-grow: 0;
+		flex-grow: 1;
 		flex-shrink: 1;
+		overflow-x: auto;
 	}
 </style>
