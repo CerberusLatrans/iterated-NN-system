@@ -289,19 +289,25 @@ export class IteratedFunctionSystem {
     /**
     * Generate points using the IFS
     * @param {number} num_points
+    * @param {Float32Array} seed
     * @returns {PtrTuple}
     */
-    generate_colors(num_points) {
-        const ret = wasm.iteratedfunctionsystem_generate_colors(this.__wbg_ptr, num_points);
+    generate_colors(num_points, seed) {
+        const ptr0 = passArrayF32ToWasm0(seed, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.iteratedfunctionsystem_generate_colors(this.__wbg_ptr, num_points, ptr0, len0);
         return PtrTuple.__wrap(ret);
     }
     /**
     * Generate points using the IFS
     * @param {number} num_points
+    * @param {Float32Array} seed
     * @returns {number}
     */
-    generate(num_points) {
-        const ret = wasm.iteratedfunctionsystem_generate(this.__wbg_ptr, num_points);
+    generate(num_points, seed) {
+        const ptr0 = passArrayF32ToWasm0(seed, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.iteratedfunctionsystem_generate(this.__wbg_ptr, num_points, ptr0, len0);
         return ret >>> 0;
     }
 }

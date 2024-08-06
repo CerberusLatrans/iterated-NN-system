@@ -41,15 +41,17 @@ export class IteratedFunctionSystem {
 /**
 * Generate points using the IFS
 * @param {number} num_points
+* @param {Float32Array} seed
 * @returns {PtrTuple}
 */
-  generate_colors(num_points: number): PtrTuple;
+  generate_colors(num_points: number, seed: Float32Array): PtrTuple;
 /**
 * Generate points using the IFS
 * @param {number} num_points
+* @param {Float32Array} seed
 * @returns {number}
 */
-  generate(num_points: number): number;
+  generate(num_points: number, seed: Float32Array): number;
 }
 /**
 */

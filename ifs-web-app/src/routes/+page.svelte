@@ -2,6 +2,7 @@
     import {AffineTransformation, IteratedFunctionSystem, MarkovChain} from "../lib/pkg/iterator";
     import { Canvas } from '@threlte/core';
     import { transformations, showRotation, showColors, showTransforms, displayWidth } from './stores';
+    import { seedX, seedY, seedZ } from "./stores";
     import SplitPane from './components/SplitPane.svelte';
     import Scene from './components/Scene.svelte';
     import ControlPanel from './components/AffinePanel.svelte';
@@ -13,7 +14,7 @@
     let n = 100_000
     IteratedFunctionSystem.init();
     let prompt = "Barnsley leafy fern";
-    const delay = (ms) => new Promise(res => setTimeout(res, ms));
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
     //let mkv = MarkovChain.from_probabilities(new Float32Array([0.01, 0.1, 0.1, 0.7]));
     //let mkv2 = MarkovChain.new(new Float32Array([0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7]), 4)
     async function inferIFS() {
@@ -26,11 +27,11 @@
         }    
     };
 
-    function generate(ifs, n) {
+    function generate(ifs: IteratedFunctionSystem, n: number, seed: Float32Array) {
         if ($showColors) {
-            return ifs.generate_colors(n)
+            return ifs.generate_colors(n, seed)
         } else {
-            let pointsPtr = ifs.generate(n)
+            let pointsPtr = ifs.generate(n, seed)
             return {
                 points_ptr: pointsPtr,
                 colors_ptr: null,
@@ -41,7 +42,9 @@
     
     $: ptrTuple = generate(IteratedFunctionSystem.new(
     Array.from($transformations.values())
-    .map((t) => AffineTransformation.new(t))), n);
+    .map((t) => AffineTransformation.new(t))),
+    n,
+    new Float32Array([$seedX, $seedY, $seedZ]));
 </script>
 
 <main>
@@ -68,7 +71,7 @@
                     step=1/>
                 points
             </label>
-            <Canvas size={{width: $displayWidth/2, height:1000}}>
+            <Canvas>
                 <Scene pointsPtr={ptrTuple.points_ptr} colorsPtr={ptrTuple.colors_ptr} {n}/>
             </Canvas>
             {#await inferIFS()}

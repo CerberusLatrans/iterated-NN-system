@@ -6,9 +6,9 @@
     export let id: number;
     export let matrix: Float32Array;
     const valueNames = [
-        "Scl X", "XY-Shr X", "XZ-Shr X", "Trlt X",
-        "XY-Shr Y", "Scl Y", "YZ-Shr Y", "Trlt Y",
-        "XZ-Shr Z", "YZ-Shr Z", "Scl Z", "Trlt Z"]
+        "Scl X", "Shr XY", "Shr XZ", "Trlt X",
+        "Shr YX", "Scl Y", "Shr YZ", "Trlt Y",
+        "Shr ZX", "Shr ZY", "Scl Z", "Trlt Z"]
 
     function range(idx: number) {
         if ((idx+1)%4 == 0) {

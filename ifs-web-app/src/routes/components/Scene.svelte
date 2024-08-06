@@ -17,6 +17,7 @@
     export let colorsPtr;
     export let n;
     $: points = new Float32Array(memory.buffer, pointsPtr, n*3)
+    $: points, console.log(points)
     $: colors = $showColors ? new Float32Array(memory.buffer, colorsPtr, n*3) : new Float32Array();
 
     function colorGeometry(geom) {

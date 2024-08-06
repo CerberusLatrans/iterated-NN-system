@@ -42,3 +42,7 @@ export const showRotation = writable(true);
 export const showColors = writable(false);
 export const showTransforms = writable(true);
 export const displayWidth = writable(0);
+
+export const seedX = writable(0);
+export const seedY = writable(0);
+export const seedZ = writable(0);

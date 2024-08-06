@@ -1,7 +1,7 @@
 <script lang='ts'>
-    import { transformations, locks, subLocks } from '../stores';
+    import { transformations, locks, subLocks, seedX, seedY, seedZ } from '../stores';
     import MatrixEditor from './MatrixEditor.svelte'
-    import { scaleObject, rotateIFS } from '../ifsUtils';
+    import { scaleObject, rotateObject } from '../ifsUtils';
 
     let downloadName = 'unnamedIFS.json'
     let scaleFactor = 1;
@@ -111,14 +111,11 @@
 
     const degToRad = (x: number) => x*(Math.PI/180);
     const rotate = ()=>{
-        const rot = rotateIFS;
-        // $transformations = rot(rot(rot(
-        //     $transformations, degToRad(rotX), "x"),
-        //     degToRad(rotY), "y"),
-        //     degToRad(rotZ), "z")}
-        $transformations = rot($transformations, degToRad(rotZ), "z");
-        console.log(rotZ, $transformations)
-        }
+        $transformations = rotateObject(rotateObject(rotateObject(
+            $transformations, degToRad(rotX), "x"),
+            degToRad(rotY), "y"),
+            degToRad(rotZ), "z")}
+       //$transformations = rot($transformations, degToRad(rotZ), "z");}
 </script>
 
 <div
@@ -135,6 +132,9 @@ style:width="50%">
     <input type="number" bind:value={rotY} step=10/>
     <input type="number" bind:value={rotZ} step=10/>
     <button on:click={rotate}>RotateXYZ</button>
+    <input type="number" bind:value={$seedX} on:change={()=>{$transformations=$transformations}} step=1/>
+    <input type="number" bind:value={$seedY} on:change={()=>{$transformations=$transformations}} step=1/>
+    <input type="number" bind:value={$seedZ} on:change={()=>{$transformations=$transformations}} step=1/>
     {#each $transformations as [id, matrix] (id)}
         <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
         <input type="checkbox" id="lock" on:change={
