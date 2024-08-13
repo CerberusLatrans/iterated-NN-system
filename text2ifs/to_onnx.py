@@ -5,7 +5,7 @@ ARITY = 4
 AFFINE_LEN = 12
 EMB_DIM = 512
 weight_folder = "weights"
-weight_path = "arity=4_ep=100_LR=0.001_nsamples=3"
+weight_path = "arity=4_ep=100_LR=0.001_nsamples=8"
 web_app_model_path = "../ifs-web-app/static/models/"
 
 model_name = "IFSNET_"+weight_path+".onnx"

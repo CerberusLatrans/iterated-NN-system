@@ -120,21 +120,36 @@
 
 <div
 style:width="50%">
-    <button on:click={() => {addTransformation()}}>Add Transformation</button>
-    <button on:click={() => {randomIFS()}}>Randomize</button>
-    <button on:click={() => {saveIFS(downloadName)}}>Download</button>
-    <input bind:value={downloadName} />
-    <input accept="application/json" type="file" on:change={importIFS}/>
-    <input type="number" bind:value={scaleFactor} step=0.1/>
-    <button on:click={()=>{$transformations = scaleObject($transformations, scaleFactor)}}>
-        Scale</button>
-    <input type="number" bind:value={rotX} step=10/>
-    <input type="number" bind:value={rotY} step=10/>
-    <input type="number" bind:value={rotZ} step=10/>
-    <button on:click={rotate}>RotateXYZ</button>
-    <input type="number" bind:value={$seedX} on:change={()=>{$transformations=$transformations}} step=1/>
-    <input type="number" bind:value={$seedY} on:change={()=>{$transformations=$transformations}} step=1/>
-    <input type="number" bind:value={$seedZ} on:change={()=>{$transformations=$transformations}} step=1/>
+    <div
+    style:display="grid"
+    style:grid-template=
+        "'add random' 'download downname' 'upload upname'">
+        <button on:click={() => {addTransformation()}}>Add Transformation</button>
+        <button on:click={() => {randomIFS()}}>Randomize</button>
+        <button on:click={() => {saveIFS(downloadName)}}>Download</button>
+        <input bind:value={downloadName} />
+        <input accept="application/json" type="file" on:change={importIFS}/>
+    </div>
+    <div
+    style:display="flex">
+        <input type="number" bind:value={scaleFactor} step=0.1/>
+        <button on:click={()=>{$transformations = scaleObject($transformations, scaleFactor)}}>
+            Scale</button>
+    </div>
+    <div
+    style:display="flex">
+        <input type="number" bind:value={rotX} step=10/>
+        <input type="number" bind:value={rotY} step=10/>
+        <input type="number" bind:value={rotZ} step=10/>
+        <button on:click={rotate}>RotateXYZ</button>
+    </div>  
+    <div
+    style:display="flex">
+        <input type="number" bind:value={$seedX} on:change={()=>{$transformations=$transformations}} step=1/>
+        <input type="number" bind:value={$seedY} on:change={()=>{$transformations=$transformations}} step=1/>
+        <input type="number" bind:value={$seedZ} on:change={()=>{$transformations=$transformations}} step=1/>
+        TranslateXYZ
+    </div>
     {#each $transformations as [id, matrix] (id)}
         <p>Transformation {id} (det={determinant(matrix).toFixed(2)})</p>
         <input type="checkbox" id="lock" on:change={

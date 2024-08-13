@@ -32,7 +32,7 @@ EMBEDDING_MODEL = "t5-small"
 SCRAMBLE_IFS = True
 train_dataset = IFSDataset(arity=ARITY,
                            scramble_ifs=SCRAMBLE_IFS,
-                           annotations_file=ANNOTATION_FILE,
+                           #annotations_file=ANNOTATION_FILE,
                            embedding_model=EMBEDDING_MODEL,
                            json_dir=JSON_DIR)
 BATCH_SIZE = len(train_dataset)

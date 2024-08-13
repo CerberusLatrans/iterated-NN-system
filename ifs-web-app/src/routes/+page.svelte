@@ -13,7 +13,7 @@
     
     let n = 100_000
     IteratedFunctionSystem.init();
-    let prompt = "Barnsley leafy fern";
+    let prompt = "leaf";
     const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
     //let mkv = MarkovChain.from_probabilities(new Float32Array([0.01, 0.1, 0.1, 0.7]));
     //let mkv2 = MarkovChain.new(new Float32Array([0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7, 0.01, 0.1, 0.1, 0.7]), 4)

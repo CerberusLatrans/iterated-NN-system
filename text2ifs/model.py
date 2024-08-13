@@ -1,5 +1,7 @@
 import torch
 
+IFSNetDecoderLayer = torch.nn.TransformerDecoderLayer(d_model=512, nhead=8)
+IFSNetDecoder = torch.nn.TransformerDecoder(IFSNetDecoderLayer, num_layers=6)
 class IFSNet(torch.nn.Module):
     def __init__(self, arity, embedding_space=512):
         super().__init__()

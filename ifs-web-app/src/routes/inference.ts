@@ -5,7 +5,7 @@ import { pipeline, AutoModelForSeq2SeqLM, AutoTokenizer, Seq2SeqLMOutput} from '
 const t5Model = 'Xenova/t5-small';
 let tokenizer = await AutoTokenizer.from_pretrained(t5Model);
 const t5Path = "./models/t5_encoder_model_quantized.onnx"
-const ifsnet_model_name = "IFSNET_arity=4_ep=100_LR=0.001_nsamples=3"
+const ifsnet_model_name = "IFSNET_arity=4_ep=100_LR=0.001_nsamples=8"
 const ifsNetPath = "../models/"+ifsnet_model_name+".onnx"
 const device = ort.env.webgpu.device;
 const EMBEDDING_SIZE = 512;
