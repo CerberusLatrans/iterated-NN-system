@@ -25,7 +25,7 @@ async function runT5Embedding(dataTensor: Tensor, attentionMaskTensor: Tensor) {
     const session = await InferenceSession.create(t5Path, {
         executionProviders: ['webgpu', 'wasm'],
         graphOptimizationLevel: 'all',
-        preferredOutputLocation: 'gpu-buffer',
+        preferredOutputLocation: 'cpu',
         logSeverityLevel: 2,
         logVerbosityLevel: 0
     });
@@ -51,7 +51,7 @@ async function runT5Embedding(dataTensor: Tensor, attentionMaskTensor: Tensor) {
 }
 async function runIFSNet(embedding: Tensor) {
     const start = new Date();
-    const session = await InferenceSession.create(ifsNetPath, { executionProviders: ['webgpu'], graphOptimizationLevel: 'all' });
+    const session = await InferenceSession.create(ifsNetPath, { executionProviders: ['cpu'], graphOptimizationLevel: 'all' });
     const feeds: Record<string, ort.Tensor> = {};
     feeds[session.inputNames[0]] = embedding
     const outputData = await session.run(feeds);
