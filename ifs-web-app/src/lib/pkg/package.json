@@ -1,0 +1,16 @@
+{
+  "name": "iterator",
+  "version": "0.1.0",
+  "files": [
+    "iterator_bg.wasm",
+    "iterator.js",
+    "iterator_bg.js",
+    "iterator.d.ts"
+  ],
+  "module": "iterator.js",
+  "types": "iterator.d.ts",
+  "sideEffects": [
+    "./iterator.js",
+    "./snippets/*"
+  ]
+}

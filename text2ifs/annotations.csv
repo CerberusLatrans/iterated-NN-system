@@ -1,0 +1,11 @@
+file,desc
+crab shell.json, large spikey crab shell
+cube.json, solid cube
+triangle.json, solid 2D right triangle
+sierpinski.json, 2D sierpinski right triangle
+siepinksi_pyr.json, 3D sierpinksi four-sided pyramid
+paraboloid.json, paraboloid
+fern3d.json, 3D fern
+fern2d.json, 2D fern
+maple2D, 2D maple2D
+
